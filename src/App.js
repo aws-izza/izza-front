@@ -1,5 +1,5 @@
 import React from 'react';
-import Kakaomap from './Kakaomap';
+import Kakaomap from './components/Kakaomap';
 
 function App() {
   return (
