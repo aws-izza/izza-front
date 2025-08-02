@@ -1,19 +1,31 @@
 import React from 'react';
+import styled from 'styled-components';
+import { MapProvider } from './contexts/MapContext';
+import SearchSidebar from './components/SearchSidebar';
 import Kakaomap from './components/Kakaomap';
+
+const AppContainer = styled.div`
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+`;
+
+const MapContainer = styled.div`
+  flex: 1;
+  height: 100vh;
+  position: relative;
+`;
 
 function App() {
   return (
-    <div className="App">
-      <header style={{ padding: '1rem', fontWeight: 'bold' }}>
-        IZZA
-      </header>
-      <main style={{ padding: '1rem' }}>
-        <p>우리는 잇자</p>
-        <div>
+    <MapProvider>
+      <AppContainer>
+        <SearchSidebar />
+        <MapContainer>
           <Kakaomap />
-        </div>
-      </main>
-    </div>
+        </MapContainer>
+      </AppContainer>
+    </MapProvider>
   );
 }
 
