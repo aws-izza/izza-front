@@ -1,7 +1,7 @@
 // 환경별 API 설정
 const environments = {
   development: {
-    BASE_URL: "http://192.168.2.74:8080",
+    BASE_URL: "http://localhost:8080",
     API_VERSION: "v1",
   },
   staging: {

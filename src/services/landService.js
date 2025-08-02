@@ -6,9 +6,13 @@ export const landService = {
   searchPoints: (params) => 
     apiClient.get('/api/v1/land-search/points', { params }),
   
-  // 폴리곤 정보
+  // 토지 상세 정보
   getDetail: (id, params) => 
     apiClient.get(`/api/v1/land-search/polygon/${id}`, { params }),
+  
+  // 폴리곤 데이터 조회 (id와 polygonType 필요)
+  getPolygon: (id, polygonType) => 
+    apiClient.get(`/api/v1/land-search/polygon/${id}?polygonType=${polygonType}`),
 };
 
 export default landService;
