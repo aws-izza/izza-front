@@ -27,6 +27,10 @@ export const landService = {
   // 용도지역 카테고리 조회
   getUseZoneCategories: () =>
     apiClient.get("/api/v1/base-info/use-zone-categories"),
+
+  // 주소 자동완성
+  getAutoComplete: (q) =>
+    apiClient.get("/api/v1/ac/auto-complete", { params: { q } }),
 };
 
 export default landService;
