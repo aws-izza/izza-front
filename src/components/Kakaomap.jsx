@@ -9,13 +9,13 @@ const Kakaomap = () => {
   const { updateMapState, searchResults } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
   const { showPolygon, hidePolygon, setState } = usePolygonManager();
-  
+
   // 함수들을 ref로 저장하여 안정적인 참조 유지
   const updateMapStateRef = useRef(updateMapState);
   const searchPointsRef = useRef(searchPoints);
   const setStateRef = useRef(setState);
   const cancelPendingSearchRef = useRef(cancelPendingSearch);
-  
+
   // ref 업데이트
   useEffect(() => {
     updateMapStateRef.current = updateMapState;
@@ -74,14 +74,22 @@ const Kakaomap = () => {
         });
         mapEventListeners.push(clickListener);
 
-        const dragstartListener = kakao.maps.event.addListener(map, "dragstart", () => {
-          setStateRef.current("idle");
-        });
+        const dragstartListener = kakao.maps.event.addListener(
+          map,
+          "dragstart",
+          () => {
+            setStateRef.current("idle");
+          }
+        );
         mapEventListeners.push(dragstartListener);
 
-        const zoomStartListener = kakao.maps.event.addListener(map, "zoom_start", () => {
-          setStateRef.current("idle");
-        });
+        const zoomStartListener = kakao.maps.event.addListener(
+          map,
+          "zoom_start",
+          () => {
+            setStateRef.current("idle");
+          }
+        );
         mapEventListeners.push(zoomStartListener);
 
         // 지도 idle 이벤트 발생 시마다 마커 갱신
@@ -115,7 +123,7 @@ const Kakaomap = () => {
     // cleanup 함수 - 컴포넌트 언마운트 시 이벤트 리스너 정리
     return () => {
       console.log("지도 이벤트 리스너 정리");
-      mapEventListeners.forEach(listener => {
+      mapEventListeners.forEach((listener) => {
         if (listener) {
           kakao.maps.event.removeListener(window.mapInstance, listener);
         }
@@ -170,7 +178,10 @@ const Kakaomap = () => {
         cursor: pointer;
         min-width: 60px;
       `;
-      overlayElement.textContent = item.type === "GROUP" ? `${item.name || "마커"} : ${item.count}` : `${item.name || "마커"}`;
+      overlayElement.textContent =
+        item.type === "GROUP"
+          ? `${item.name || "마커"} : ${item.count}`
+          : `${item.name || "마커"}`;
 
       // 마우스 오버 이벤트 - 폴리곤 표시
       overlayElement.addEventListener("mouseenter", () => {
@@ -179,10 +190,10 @@ const Kakaomap = () => {
           .getPolygon(item.id, item.type)
           .then((res) => {
             console.log("폴리곤 데이터:", res.data);
-            const polygonData = res.data.data.polygon;
+            const polygonDataList = res.data.data.polygon; // 이제 List<List<Polygon>> 형태
 
-            // PolygonManager를 사용하여 폴리곤 표시
-            showPolygon(polygonData, map);
+            // PolygonManager를 사용하여 여러 폴리곤 표시
+            showPolygon(polygonDataList, map);
           })
           .catch((err) => {
             console.error("폴리곤 로드 실패:", err);
