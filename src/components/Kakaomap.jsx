@@ -1,14 +1,19 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { landService } from "../services/landService.js";
 import { useMapContext } from "../contexts/MapContext";
 import { useMapSearch } from "../hooks/useMapSearch";
 import { usePolygonManager } from "../hooks/usePolygonManager";
+import LandDetailSidebar from "./LandDetailSidebar";
 
 /* global kakao */
 const Kakaomap = () => {
   const { updateMapState, searchResults } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
-  const { showPolygon, hidePolygon, setState } = usePolygonManager();
+  const { showPolygon, hidePolygon, showSelectedPolygon, hideSelectedPolygon, setState } = usePolygonManager();
+
+  // 토지 상세 정보 사이드바 상태
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedLandId, setSelectedLandId] = useState(null);
 
   // 함수들을 ref로 저장하여 안정적인 참조 유지
   const updateMapStateRef = useRef(updateMapState);
@@ -205,7 +210,7 @@ const Kakaomap = () => {
         hidePolygon();
       });
 
-      // GROUP 타입 마커에 클릭 이벤트 추가
+      // 마커 타입별 클릭 이벤트 추가
       if (item.type === "GROUP") {
         overlayElement.addEventListener("click", () => {
           // 마커 클릭 시 폴리곤 상태 초기화
@@ -219,6 +224,25 @@ const Kakaomap = () => {
           map.setLevel(newLevel);
 
           console.log(`GROUP 마커 클릭: ${item.name}, 새 줌 레벨: ${newLevel}`);
+        });
+      } else if (item.type === "LAND") {
+        // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시
+        overlayElement.addEventListener("click", () => {
+          console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
+          setSelectedLandId(item.id);
+          setIsSidebarOpen(true);
+          
+          // 선택된 토지의 폴리곤 표시
+          landService
+            .getPolygon(item.id, item.type)
+            .then((res) => {
+              console.log("선택된 토지 폴리곤 데이터:", res.data);
+              const polygonDataList = res.data.data.polygon;
+              showSelectedPolygon(polygonDataList, map);
+            })
+            .catch((err) => {
+              console.error("선택된 토지 폴리곤 로드 실패:", err);
+            });
         });
       }
 
@@ -234,9 +258,39 @@ const Kakaomap = () => {
     });
 
     window.currentMarkers = currentMarkers;
-  }, [hidePolygon, searchResults, showPolygon]); // 의존성을 searchResults만으로 최소화
+  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon]); // 의존성을 searchResults만으로 최소화
 
-  return <div id="map" style={{ width: "100%", height: "100vh" }}></div>;
+  // 사이드바 상태 변경 시 지도 크기 재조정
+  useEffect(() => {
+    if (window.mapInstance) {
+      // 약간의 지연을 두어 CSS 트랜지션이 완료된 후 지도 크기 재조정
+      setTimeout(() => {
+        window.mapInstance.relayout();
+      }, 300);
+    }
+  }, [isSidebarOpen]);
+
+  return (
+    <>
+      <div
+        id="map"
+        style={{
+          width: "100%",
+          height: "100vh",
+          transition: "margin-right 0.3s ease-in-out",
+          marginRight: isSidebarOpen ? "400px" : "0",
+        }}
+      ></div>
+      <LandDetailSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => {
+          setIsSidebarOpen(false);
+          hideSelectedPolygon(); // 사이드바 닫을 때 선택된 폴리곤도 숨기기
+        }}
+        landId={selectedLandId}
+      />
+    </>
+  );
 };
 
 export default Kakaomap;

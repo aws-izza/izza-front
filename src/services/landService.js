@@ -31,6 +31,14 @@ export const landService = {
   // 주소 자동완성
   getAutoComplete: (q) =>
     apiClient.get("/api/v1/ac/auto-complete", { params: { q } }),
+
+  // 토지 상세 정보 조회
+  getLandDetail: (landId) =>
+    apiClient.get(`/api/v1/land-search/land/${landId}`),
+
+  // 지역 정보 조회 (인구, 전기료, 재해 정보)
+  getAreaInfo: (landId) =>
+    apiClient.get(`/api/v1/land-search/area/${landId}`),
 };
 
 export default landService;
