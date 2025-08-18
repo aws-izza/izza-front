@@ -304,8 +304,8 @@ const SearchSidebar = () => {
         <Tab active={activeTab === "분석"} onClick={() => setActiveTab("분석")}>
           분석
         </Tab>
-        <Tab active={activeTab === "시장"} onClick={() => setActiveTab("시장")}>
-          시장
+        <Tab active={activeTab === "저장"} onClick={() => setActiveTab("저장")}>
+          저장
         </Tab>
       </TabContainer>
 
