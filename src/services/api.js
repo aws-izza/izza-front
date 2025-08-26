@@ -5,7 +5,7 @@ import API_CONFIG from "../config/api";
 // axios 인스턴스 생성
 const apiClient = axios.create({
   baseURL: API_CONFIG.BASE_URL,
-  timeout: 10000,
+  timeout: 100000,
   headers: {
     "Content-Type": "application/json",
   },
