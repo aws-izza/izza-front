@@ -1,21 +1,26 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { landService } from "../services/landService.js";
 import { useMapContext } from "../contexts/MapContext";
 import { useMapSearch } from "../hooks/useMapSearch";
 import { usePolygonManager } from "../hooks/usePolygonManager";
+import LandDetailSidebar from "./LandDetailSidebar";
 
 /* global kakao */
 const Kakaomap = () => {
   const { updateMapState, searchResults } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
-  const { showPolygon, hidePolygon, setState } = usePolygonManager();
-  
+  const { showPolygon, hidePolygon, showSelectedPolygon, hideSelectedPolygon, setState } = usePolygonManager();
+
+  // 토지 상세 정보 사이드바 상태
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedLandId, setSelectedLandId] = useState(null);
+
   // 함수들을 ref로 저장하여 안정적인 참조 유지
   const updateMapStateRef = useRef(updateMapState);
   const searchPointsRef = useRef(searchPoints);
   const setStateRef = useRef(setState);
   const cancelPendingSearchRef = useRef(cancelPendingSearch);
-  
+
   // ref 업데이트
   useEffect(() => {
     updateMapStateRef.current = updateMapState;
@@ -74,14 +79,22 @@ const Kakaomap = () => {
         });
         mapEventListeners.push(clickListener);
 
-        const dragstartListener = kakao.maps.event.addListener(map, "dragstart", () => {
-          setStateRef.current("idle");
-        });
+        const dragstartListener = kakao.maps.event.addListener(
+          map,
+          "dragstart",
+          () => {
+            setStateRef.current("idle");
+          }
+        );
         mapEventListeners.push(dragstartListener);
 
-        const zoomStartListener = kakao.maps.event.addListener(map, "zoom_start", () => {
-          setStateRef.current("idle");
-        });
+        const zoomStartListener = kakao.maps.event.addListener(
+          map,
+          "zoom_start",
+          () => {
+            setStateRef.current("idle");
+          }
+        );
         mapEventListeners.push(zoomStartListener);
 
         // 지도 idle 이벤트 발생 시마다 마커 갱신
@@ -115,7 +128,7 @@ const Kakaomap = () => {
     // cleanup 함수 - 컴포넌트 언마운트 시 이벤트 리스너 정리
     return () => {
       console.log("지도 이벤트 리스너 정리");
-      mapEventListeners.forEach(listener => {
+      mapEventListeners.forEach((listener) => {
         if (listener) {
           kakao.maps.event.removeListener(window.mapInstance, listener);
         }
@@ -170,7 +183,10 @@ const Kakaomap = () => {
         cursor: pointer;
         min-width: 60px;
       `;
-      overlayElement.textContent = item.type === "GROUP" ? `${item.name || "마커"} : ${item.count}` : `${item.name || "마커"}`;
+      overlayElement.textContent =
+        item.type === "GROUP"
+          ? `${item.name || "마커"} : ${item.count}`
+          : `${item.name || "마커"}`;
 
       // 마우스 오버 이벤트 - 폴리곤 표시
       overlayElement.addEventListener("mouseenter", () => {
@@ -179,10 +195,10 @@ const Kakaomap = () => {
           .getPolygon(item.id, item.type)
           .then((res) => {
             console.log("폴리곤 데이터:", res.data);
-            const polygonData = res.data.data.polygon;
+            const polygonDataList = res.data.data.polygon; // 이제 List<List<Polygon>> 형태
 
-            // PolygonManager를 사용하여 폴리곤 표시
-            showPolygon(polygonData, map);
+            // PolygonManager를 사용하여 여러 폴리곤 표시
+            showPolygon(polygonDataList, map);
           })
           .catch((err) => {
             console.error("폴리곤 로드 실패:", err);
@@ -194,7 +210,7 @@ const Kakaomap = () => {
         hidePolygon();
       });
 
-      // GROUP 타입 마커에 클릭 이벤트 추가
+      // 마커 타입별 클릭 이벤트 추가
       if (item.type === "GROUP") {
         overlayElement.addEventListener("click", () => {
           // 마커 클릭 시 폴리곤 상태 초기화
@@ -208,6 +224,25 @@ const Kakaomap = () => {
           map.setLevel(newLevel);
 
           console.log(`GROUP 마커 클릭: ${item.name}, 새 줌 레벨: ${newLevel}`);
+        });
+      } else if (item.type === "LAND") {
+        // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시
+        overlayElement.addEventListener("click", () => {
+          console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
+          setSelectedLandId(item.id);
+          setIsSidebarOpen(true);
+          
+          // 선택된 토지의 폴리곤 표시
+          landService
+            .getPolygon(item.id, item.type)
+            .then((res) => {
+              console.log("선택된 토지 폴리곤 데이터:", res.data);
+              const polygonDataList = res.data.data.polygon;
+              showSelectedPolygon(polygonDataList, map);
+            })
+            .catch((err) => {
+              console.error("선택된 토지 폴리곤 로드 실패:", err);
+            });
         });
       }
 
@@ -223,9 +258,39 @@ const Kakaomap = () => {
     });
 
     window.currentMarkers = currentMarkers;
-  }, [hidePolygon, searchResults, showPolygon]); // 의존성을 searchResults만으로 최소화
+  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon]); // 의존성을 searchResults만으로 최소화
 
-  return <div id="map" style={{ width: "100%", height: "100vh" }}></div>;
+  // 사이드바 상태 변경 시 지도 크기 재조정
+  useEffect(() => {
+    if (window.mapInstance) {
+      // 약간의 지연을 두어 CSS 트랜지션이 완료된 후 지도 크기 재조정
+      setTimeout(() => {
+        window.mapInstance.relayout();
+      }, 300);
+    }
+  }, [isSidebarOpen]);
+
+  return (
+    <>
+      <div
+        id="map"
+        style={{
+          width: "100%",
+          height: "100vh",
+          transition: "margin-right 0.3s ease-in-out",
+          marginRight: isSidebarOpen ? "400px" : "0",
+        }}
+      ></div>
+      <LandDetailSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => {
+          setIsSidebarOpen(false);
+          hideSelectedPolygon(); // 사이드바 닫을 때 선택된 폴리곤도 숨기기
+        }}
+        landId={selectedLandId}
+      />
+    </>
+  );
 };
 
 export default Kakaomap;

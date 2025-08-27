@@ -27,6 +27,22 @@ export const landService = {
   // 용도지역 카테고리 조회
   getUseZoneCategories: () =>
     apiClient.get("/api/v1/base-info/use-zone-categories"),
+
+  // 주소 자동완성
+  getAutoComplete: (q) =>
+    apiClient.get("/api/v1/ac/auto-complete", { params: { q } }),
+
+  // 토지 상세 정보 조회
+  getLandDetail: (landId) =>
+    apiClient.get(`/api/v1/land-search/land/${landId}`),
+
+  // 지역 정보 조회 (인구, 전기료, 재해 정보)
+  getAreaInfo: (landId) =>
+    apiClient.get(`/api/v1/land-search/area/${landId}`),
+
+  // 지역 정보 조회 (시도, 시군구)
+  getRegions: (prefix) =>
+    apiClient.get(`/api/v1/base-info/regions?prefix=${prefix}`),
 };
 
 export default landService;

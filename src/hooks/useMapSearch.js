@@ -35,7 +35,7 @@ export const useMapSearch = () => {
         zoomLevel: bounds.level,
         
         // 사용자 필터 (빈 값은 제외)
-        ...(searchFilters.useZoneCategory && { useZoneCategory: searchFilters.useZoneCategory }),
+        ...(searchFilters.useZoneCategory && { useZoneCategories: searchFilters.useZoneCategory }),
         landAreaMin: searchFilters.landAreaMin,
         landAreaMax: searchFilters.landAreaMax,
         officialLandPriceMin: searchFilters.officialLandPriceMin,
