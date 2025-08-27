@@ -39,6 +39,10 @@ export const landService = {
   // 지역 정보 조회 (인구, 전기료, 재해 정보)
   getAreaInfo: (landId) =>
     apiClient.get(`/api/v1/land-search/area/${landId}`),
+
+  // 지역 정보 조회 (시도, 시군구)
+  getRegions: (prefix) =>
+    apiClient.get(`/api/v1/base-info/regions?prefix=${prefix}`),
 };
 
 export default landService;
