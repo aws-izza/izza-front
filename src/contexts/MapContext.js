@@ -30,6 +30,9 @@ export const MapProvider = ({ children }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
+  // 분석 결과 상태
+  const [analysisResults, setAnalysisResults] = useState(null);
+  
   // 선택된 아이템 상태
   const [selectedItems, setSelectedItems] = useState([]);
   
@@ -54,6 +57,7 @@ export const MapProvider = ({ children }) => {
     mapState,
     searchResults,
     isLoading,
+    analysisResults,
     selectedItems,
     
     // 액션
@@ -64,6 +68,7 @@ export const MapProvider = ({ children }) => {
     updateMapState,
     setSearchResults,
     setIsLoading,
+    setAnalysisResults,
     setSelectedItems
   };
 

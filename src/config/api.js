@@ -1,15 +1,15 @@
 // 환경별 API 설정
 const environments = {
   development: {
-    BASE_URL: "http://localhost:8080",
+    BASE_URL: "https://api.izza-nopizza.com/dev/",
     API_VERSION: "v1",
   },
   staging: {
-    BASE_URL: "https://staging-api.yourcompany.com",
+    BASE_URL: "https://we-do-not-have-staging-fuckhead.com/kys/",
     API_VERSION: "v1",
   },
   production: {
-    BASE_URL: "https://api.yourcompany.com",
+    BASE_URL: "https://api.izza-nopizza.com/prod/",
     API_VERSION: "v1",
   },
 };

@@ -382,3 +382,53 @@ export const StyledSearchButton = styled(SearchButton)`
   
   transition: all 0.3s ease;
 `;
+
+export const ErrorContainer = styled.div`
+  background: #ffebee;
+  border: 1px solid #f44336;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+  color: #c62828;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.1);
+`;
+
+export const ErrorContent = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+`;
+
+export const ErrorMessage = styled.span`
+  flex: 1;
+  line-height: 1.4;
+`;
+
+export const ErrorCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #c62828;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(198, 40, 40, 0.1);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;

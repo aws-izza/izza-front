@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useLandData } from '../../hooks/useLandData';
 import { useRegionData } from '../../hooks/useRegionData';
+import { useMapContext } from '../../contexts/MapContext';
 import UseZoneDropdown from './shared/UseZoneDropdown';
 import RegionSelector from './shared/RegionSelector';
 import RangeSlider from './shared/RangeSlider';
+import AnalysisResults from './AnalysisResults';
+import { landService } from '../../services/landService';
+import { buildAnalysisRequestPayload } from '../../utils/analysisTransform';
 import {
   FilterSection,
   FilterTitle,
   DropdownContainer,
   DropdownLabel,
-  Dropdown,
   SearchButton,
   CategorySection,
   CategoryTitle,
@@ -23,6 +26,10 @@ import {
   WeightInput,
   RequiredLabel,
   StyledSearchButton,
+  ErrorContainer,
+  ErrorContent,
+  ErrorMessage,
+  ErrorCloseButton,
 } from './styles';
 
 const AnalysisTab = () => {
@@ -50,6 +57,13 @@ const AnalysisTab = () => {
   const [indicatorRanges, setIndicatorRanges] = useState({});
   const [sliderValues, setSliderValues] = useState({});
   const [selectedUseZone, setSelectedUseZone] = useState('');
+  
+  // Analysis execution state management
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
+  
+  // Get analysis results from global context
+  const { analysisResults, setAnalysisResults } = useMapContext();
   
   // 공통 데이터 훅 사용
   const { landAreaRange, landPriceRange, useZoneCategories, isLoading } = useLandData();
@@ -111,6 +125,76 @@ const AnalysisTab = () => {
       const weight = indicatorWeights[key];
       return weight !== '' && weight >= 1 && weight <= 100;
     });
+  };
+
+  // API call handler function for analysis execution
+  const handleAnalysisExecution = async () => {
+    // Clear any previous errors
+    setAnalysisError(null);
+    
+    // Set loading state
+    setIsAnalyzing(true);
+    
+    try {
+      // Build request payload using transformation utilities
+      console.log(selectedDistrict);
+      const requestPayload = buildAnalysisRequestPayload({
+        selectedRegion,
+        selectedDistrict,
+        selectedUseZone,
+        selectedIndicators,
+        indicatorWeights,
+        indicatorRanges,
+        industryType: 'MANUFACTURING' // Default as specified in requirements
+      });
+      
+      // Log request payload for debugging as specified in task 9
+      console.log('Analysis Request Payload:', requestPayload);
+      
+      // Make API call
+      const response = await landService.analyzeArea(requestPayload);
+      
+      // Handle successful response
+      console.log('Analysis Results:', response.data);
+      
+      // Store response data in global context for cross-component access
+      setAnalysisResults(response.data);
+      
+      // Clear any previous errors on successful response
+      setAnalysisError(null);
+      
+      // Scroll to results after a short delay to allow rendering
+      setTimeout(() => {
+        const resultsElement = document.querySelector('[data-analysis-results]');
+        if (resultsElement) {
+          resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+      
+    } catch (error) {
+      // Handle different error types with user-friendly messages
+      let errorMessage;
+      
+      if (error.response?.status === 400) {
+        errorMessage = '입력 데이터를 확인해주세요.';
+      } else if (error.response?.status === 500) {
+        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      } else if (error.code === 'NETWORK_ERROR') {
+        errorMessage = '네트워크 연결을 확인해주세요.';
+      } else {
+        errorMessage = '분석 중 오류가 발생했습니다.';
+      }
+      
+      // Log detailed error for debugging
+      console.error('Analysis Error:', error);
+      
+      // Set error state
+      setAnalysisError(errorMessage);
+      
+    } finally {
+      // Always reset loading state
+      setIsAnalyzing(false);
+    }
   };
 
   // 범위 변경 핸들러 (텍스트 입력)
@@ -368,6 +452,21 @@ const AnalysisTab = () => {
         </CategorySection>
       )}
       
+      {/* Error display */}
+      {analysisError && (
+        <ErrorContainer>
+          <ErrorContent>
+            <ErrorMessage>{analysisError}</ErrorMessage>
+            <ErrorCloseButton 
+              onClick={() => setAnalysisError(null)}
+              title="오류 메시지 닫기"
+            >
+              ×
+            </ErrorCloseButton>
+          </ErrorContent>
+        </ErrorContainer>
+      )}
+      
       <div style={{ display: 'flex', gap: '10px' }}>
         <SearchButton 
           onClick={() => setAnalysisStep(2)}
@@ -376,31 +475,33 @@ const AnalysisTab = () => {
           이전
         </SearchButton>
         <StyledSearchButton 
-          onClick={() => console.log('분석 실행', { 
-            selectedRegion, 
-            selectedDistrict, 
-            selectedUseZone, 
-            selectedIndicators, 
-            indicatorWeights, 
-            indicatorRanges 
-          })}
-          disabled={!isStep3Valid()}
+          onClick={handleAnalysisExecution}
+          disabled={!isStep3Valid() || isAnalyzing}
           variant={isStep3Valid() ? 'success' : ''}
         >
-          분석 실행
+          {isAnalyzing ? '분석 중...' : '분석 실행'}
         </StyledSearchButton>
       </div>
     </>
   );
 
   return (
-    <FilterSection>
-      <FilterTitle>분석 단계 {analysisStep}/3</FilterTitle>
+    <>
+      <FilterSection>
+        <FilterTitle>분석 단계 {analysisStep}/3</FilterTitle>
+        
+        {analysisStep === 1 && renderStep1()}
+        {analysisStep === 2 && renderStep2()}
+        {analysisStep === 3 && renderStep3()}
+      </FilterSection>
       
-      {analysisStep === 1 && renderStep1()}
-      {analysisStep === 2 && renderStep2()}
-      {analysisStep === 3 && renderStep3()}
-    </FilterSection>
+      {/* Display analysis results after successful analysis */}
+      {analysisResults && (
+        <div data-analysis-results>
+          <AnalysisResults analysisResults={analysisResults} />
+        </div>
+      )}
+    </>
   );
 };
 
