@@ -1,0 +1,22 @@
+version: 1
+env:
+  variables:
+    REACT_APP_STAGE: development
+    REACT_APP_API_VERSION: v1
+    REACT_APP_DEBUG: false
+    REACT_APP_KAKAO_MAP_API_KEY: 2a2c3b7352ab25e0ce3acbe86b0dad49
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm install
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: build
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
