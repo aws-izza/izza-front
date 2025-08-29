@@ -4,8 +4,8 @@ const environments = {
     BASE_URL: "https://api.izza-nopizza.com/dev/",
     API_VERSION: "v1",
   },
-  staging: {
-    BASE_URL: "https://we-do-not-have-staging-fuckhead.com/kys/",
+  local: {
+    BASE_URL: "http://localhost:8080",
     API_VERSION: "v1",
   },
   production: {
@@ -16,10 +16,13 @@ const environments = {
 
 // 현재 환경 감지
 const getCurrentEnvironment = () => {
-  if (process.env.NODE_ENV === "production") {
-    return process.env.REACT_APP_STAGE === "staging" ? "staging" : "production";
+  if (process.env.REACT_APP_STAGE === "local") {
+    return "local";
   }
-  return "development";
+  if (process.env.REACT_APP_STAGE === "development") {
+    return "development";
+  }
+  return "production";
 };
 
 const currentEnv = getCurrentEnvironment();
