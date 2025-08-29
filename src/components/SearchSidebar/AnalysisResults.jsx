@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useMapContext } from '../../contexts/MapContext';
 import { usePolygonManager } from '../../hooks/usePolygonManager';
+import { useLandNavigation } from '../../hooks/useLandNavigation';
 import { landService } from '../../services/landService';
 
 const ResultsContainer = styled.div`
@@ -112,35 +112,21 @@ const NoResultsMessage = styled.div`
  * Component to display analysis results showing top 10 highest scoring land
  */
 const AnalysisResults = ({ analysisResults }) => {
-  const { moveMapToLocation, setLandDetailSidebar } = useMapContext();
+  const { navigateToLand } = useLandNavigation();
   const { showPolygon, hidePolygon } = usePolygonManager();
 
   // Handle various response structures
   const landScores = analysisResults?.data?.landScores || analysisResults?.landScores || [];
 
-  // Handle land item click - show detail sidebar and move map
+  // Handle land item click - use the reusable navigation function
   const handleLandClick = async (result) => {
     const landId = result.landId;
-
-    // Open the land detail sidebar
-    setLandDetailSidebar({
-      isOpen: true,
-      landId: landId
-    });
-
-    // Get land details to find coordinates, then move map
-    try {
-      const landDetailResponse = await landService.getLandDetail(landId);
-      if (landDetailResponse.data && landDetailResponse.data.data) {
-        const landDetail = landDetailResponse.data.data;
-        if (landDetail.centerPoint && landDetail.centerPoint.lat && landDetail.centerPoint.lng) {
-          // Move map to land location with high zoom level (level 1 is most zoomed in)
-          moveMapToLocation(landDetail.centerPoint.lat, landDetail.centerPoint.lng, 1);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to get land coordinates for map movement:', error);
-      // Continue without map movement if coordinate fetch fails
+    
+    // Use the custom hook for cleaner code
+    const response = await navigateToLand(landId, 1);
+    
+    if (!response.success) {
+      console.error('Failed to navigate to land:', response.error);
     }
   };
 

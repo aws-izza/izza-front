@@ -7,7 +7,7 @@ import LandDetailSidebar from "./LandDetailSidebar";
 
 /* global kakao */
 const Kakaomap = () => {
-  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar } = useMapContext();
+  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar, showLandDetails } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
   const { showPolygon, hidePolygon, showSelectedPolygon, hideSelectedPolygon, setState } = usePolygonManager();
 
@@ -223,12 +223,11 @@ const Kakaomap = () => {
         });
       } else if (item.type === "LAND") {
         // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시
-        overlayElement.addEventListener("click", () => {
+        overlayElement.addEventListener("click", async () => {
           console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
-          setLandDetailSidebar({
-            isOpen: true,
-            landId: item.id
-          });
+          
+          // Use the reusable function from MapContext (no zoom change for map markers)
+          await showLandDetails(item.id, null);
 
           // 선택된 토지의 폴리곤 표시
           landService
@@ -256,7 +255,7 @@ const Kakaomap = () => {
     });
 
     window.currentMarkers = currentMarkers;
-  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon, setLandDetailSidebar]);
+  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon, showLandDetails, setLandDetailSidebar]);
 
   // 사이드바 상태 변경 시 지도 크기 재조정
   useEffect(() => {

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { landService } from '../services/landService';
 
 const MapContext = createContext();
 
@@ -92,6 +93,32 @@ export const MapProvider = ({ children }) => {
     }
   }, []);
 
+  // 토지 ID로 지도 이동 및 상세 사이드바 표시 (재사용 가능한 함수)
+  const showLandDetails = useCallback(async (landId, zoomLevel = 1) => {
+    try {
+      // 1. 토지 상세 사이드바 열기
+      setLandDetailSidebar({
+        isOpen: true,
+        landId: landId
+      });
+
+      // 2. 토지 상세 정보를 가져와서 지도 이동
+      const landDetailResponse = await landService.getLandDetail(landId);
+      if (landDetailResponse.data && landDetailResponse.data.data) {
+        const landDetail = landDetailResponse.data.data;
+        if (landDetail.centerPoint && landDetail.centerPoint.lat && landDetail.centerPoint.lng) {
+          // 지도를 토지 위치로 이동
+          moveMapToLocation(landDetail.centerPoint.lat, landDetail.centerPoint.lng, zoomLevel);
+        }
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to show land details:', error);
+      return { success: false, error };
+    }
+  }, [setLandDetailSidebar, moveMapToLocation]);
+
   const value = {
     // 상태
     searchFilters,
@@ -114,7 +141,8 @@ export const MapProvider = ({ children }) => {
     setSelectedItems,
     setLandDetailSidebar,
     moveMapToLocation,
-    moveMapToRegion
+    moveMapToRegion,
+    showLandDetails
   };
 
   return (
