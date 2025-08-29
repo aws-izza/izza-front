@@ -44,6 +44,14 @@ export const landService = {
   getRegions: (prefix) =>
     apiClient.get(`/api/v1/base-info/regions?prefix=${prefix}`),
 
+  // 지역 경계 좌표 조회
+  getRegionBounds: (regionCode) =>
+    apiClient.get(`/api/v1/base-info/region-bounds/${regionCode}`),
+
+  // 개별 토지 좌표 조회
+  getLandCoordinates: (landId) =>
+    apiClient.get(`/api/v1/land-search/coordinates/${landId}`),
+
   /**
    * 토지 분석 실행
    * @param {Object} analysisRequest - 분석 요청 데이터

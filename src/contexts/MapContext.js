@@ -51,6 +51,39 @@ export const MapProvider = ({ children }) => {
     setMapState(prev => ({ ...prev, ...updates }));
   }, []);
 
+  // 지도 중심 이동 함수
+  const moveMapToLocation = useCallback((lat, lng, level = null) => {
+    if (window.mapInstance) {
+      const position = new window.kakao.maps.LatLng(lat, lng);
+      window.mapInstance.setCenter(position);
+      
+      if (level !== null) {
+        window.mapInstance.setLevel(level);
+      }
+      
+      // 상태도 업데이트
+      updateMapState({
+        center: { lat, lng },
+        ...(level !== null && { level })
+      });
+    }
+  }, [updateMapState]);
+
+  // 지역 경계에 맞게 지도 이동 함수
+  const moveMapToRegion = useCallback((bounds) => {
+    if (window.mapInstance && bounds) {
+      const kakaoMapBounds = new window.kakao.maps.LatLngBounds();
+      
+      // 경계 좌표들을 추가
+      bounds.forEach(coord => {
+        kakaoMapBounds.extend(new window.kakao.maps.LatLng(coord.lat, coord.lng));
+      });
+      
+      // 지도를 경계에 맞게 조정
+      window.mapInstance.setBounds(kakaoMapBounds);
+    }
+  }, []);
+
   const value = {
     // 상태
     searchFilters,
@@ -69,7 +102,9 @@ export const MapProvider = ({ children }) => {
     setSearchResults,
     setIsLoading,
     setAnalysisResults,
-    setSelectedItems
+    setSelectedItems,
+    moveMapToLocation,
+    moveMapToRegion
   };
 
   return (

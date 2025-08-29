@@ -1,5 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useMapContext } from '../../contexts/MapContext';
+import { usePolygonManager } from '../../hooks/usePolygonManager';
+import { landService } from '../../services/landService';
 
 const ResultsContainer = styled.div`
   background: white;
@@ -43,10 +46,18 @@ const ResultItem = styled.div`
   padding: 12px;
   border-left: 4px solid #4caf50;
   transition: all 0.2s ease;
+  cursor: pointer;
 
   &:hover {
     background: #e8f5e8;
     transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+  }
+
+  &.highlighted {
+    background: #e3f2fd;
+    border-left-color: #2196f3;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
   }
 `;
 
@@ -101,8 +112,43 @@ const NoResultsMessage = styled.div`
  * Component to display analysis results showing top 10 highest scoring land
  */
 const AnalysisResults = ({ analysisResults }) => {
+  const { moveMapToLocation } = useMapContext();
+  const { showPolygon, hidePolygon } = usePolygonManager();
+  
   // Handle various response structures
   const landScores = analysisResults?.data?.landScores || analysisResults?.landScores || [];
+
+  // Handle land item click - move map to land center
+  const handleLandClick = async (landId) => {
+    try {
+      const response = await landService.getLandCoordinates(landId);
+      if (response.data && response.data.data) {
+        const { lat, lng } = response.data.data;
+        // Move to land location with appropriate zoom level
+        moveMapToLocation(lat, lng, 5);
+      }
+    } catch (error) {
+      console.error('Failed to get land coordinates:', error);
+    }
+  };
+
+  // Handle land item hover - show polygon
+  const handleLandHover = async (landId) => {
+    try {
+      const response = await landService.getPolygon(landId, 'LAND');
+      if (response.data && response.data.data && window.mapInstance) {
+        const polygonDataList = response.data.data.polygon;
+        showPolygon(polygonDataList, window.mapInstance);
+      }
+    } catch (error) {
+      console.error('Failed to get land polygon:', error);
+    }
+  };
+
+  // Handle mouse leave - hide polygon
+  const handleLandLeave = () => {
+    hidePolygon();
+  };
 
   if (!analysisResults || landScores.length === 0) {
     return (
@@ -133,7 +179,13 @@ const AnalysisResults = ({ analysisResults }) => {
       <ResultsTitle>분석 결과 - 상위 {sortedResults.length}개 부지</ResultsTitle>
       <ResultsList>
         {sortedResults.map((result, index) => (
-          <ResultItem key={result.landId || index}>
+          <ResultItem 
+            key={result.landId || index}
+            onClick={() => handleLandClick(result.landId)}
+            onMouseEnter={() => handleLandHover(result.landId)}
+            onMouseLeave={handleLandLeave}
+            title="클릭하면 지도에서 해당 토지로 이동합니다"
+          >
             <div>
               <ResultRank>{index + 1}위</ResultRank>
               <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
