@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { landService } from "../services/landService";
 import PopulationChart from "./PopulationChart";
+import { useMapContext } from "../contexts/MapContext";
 import "../styles/LandDetailSidebar.css";
 
-const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
+const LandDetailSidebar = ({ isOpen, onClose, landId, openedFromAnalysis = false }) => {
+  const { analysisResults } = useMapContext();
   const [landDetail, setLandDetail] = useState(null);
   const [areaInfo, setAreaInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const fetchLandDetail = useCallback(async () => {
     if (!landId) return;
@@ -48,10 +51,97 @@ const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
     return new Intl.NumberFormat("ko-KR").format(area) + "㎡";
   };
 
-  const formatNumber = (num) => {
-    if (!num) return "-";
-    return new Intl.NumberFormat("ko-KR").format(num);
-  };
+  // AI 보고서 생성 함수
+  const generateAIReport = useCallback(async () => {
+    if (!landId || !landDetail || !analysisResults) {
+      console.error('Missing required data for AI report generation');
+      return;
+    }
+
+    setIsGeneratingReport(true);
+
+    try {
+      // 분석 결과에서 현재 토지의 데이터 찾기
+      const landScores = analysisResults?.data?.landScores || analysisResults?.landScores || [];
+      const currentLandData = landScores.find(land => land.landId === landId);
+
+      if (!currentLandData) {
+        throw new Error('해당 토지의 분석 데이터를 찾을 수 없습니다.');
+      }
+
+      // analyze_data 구성 (categoryScores에서 각 카테고리의 totalScore 추출)
+      const analyzeData = {
+        "입지조건": 0,
+        "인프라": 0,
+        "안정성": 0
+      };
+
+      if (currentLandData.categoryScores) {
+        currentLandData.categoryScores.forEach(category => {
+          if (analyzeData.hasOwnProperty(category.categoryName)) {
+            analyzeData[category.categoryName] = (category.totalScore || 0) * 100;
+          }
+        });
+      }
+
+      console.log(landDetail);
+
+      // land_data 구성
+      const landData = {
+        "주소": landDetail.address || "",
+        "지목": landDetail.landCategoryName || "",
+        "용도지역": landDetail.useDistrictName1 || "",
+        "용도지구": landDetail.useDistrictName2 || "지정되지않음",
+        "토지이용상황": landDetail.landUseName || "",
+        "지형고저": landDetail.terrainHeightName || "",
+        "형상": landDetail.terrainShapeName || "",
+        "도로접면": landDetail.roadSideName || "",
+        "공시지가": landDetail.officialLandPrice || 0
+      };
+
+      // API 요청 데이터 구성
+      const requestData = {
+        analyze_data: analyzeData,
+        land_data: landData
+      };
+
+      console.log('현재 토지 분석 데이터:', currentLandData);
+      console.log('AI 보고서 생성 요청 데이터:', requestData);
+
+      // API 호출
+      const response = await fetch('https://report.izza-nopizza.com/api/analyze', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 요청 실패: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('AI 보고서 생성 응답:', result);
+
+      // task_id를 사용하여 새 탭에서 로딩 페이지 열기
+      if (result.task_id) {
+        const reportUrl = `https://report.izza-nopizza.com/loading/${result.task_id}`;
+        window.open(reportUrl, '_blank');
+      } else {
+        throw new Error('응답에서 task_id를 찾을 수 없습니다.');
+      }
+
+    } catch (error) {
+      console.error('AI 보고서 생성 실패:', error);
+      alert(`AI 보고서 생성에 실패했습니다: ${error.message}`);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  }, [landId, landDetail, analysisResults]);
+
+
 
   return (
     <div className={`land-detail-sidebar ${isOpen ? "open" : ""}`}>
@@ -153,7 +243,7 @@ const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
                     )}
                     {areaInfo.emergencyTextInfo.disasterTypeBreakdown &&
                       areaInfo.emergencyTextInfo.disasterTypeBreakdown.length >
-                        0 && (
+                      0 && (
                         <div className="disaster-breakdown">
                           {areaInfo.emergencyTextInfo.disasterTypeBreakdown.map(
                             (disaster, index) => (
@@ -185,6 +275,24 @@ const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
                   </div>
                 </div>
               </>
+            )}
+
+            {/* AI 보고서 생성 버튼 - 분석 결과에서 열린 경우에만 표시 */}
+            {openedFromAnalysis && (
+              <button
+                className="ai-report-button"
+                onClick={generateAIReport}
+                disabled={isGeneratingReport}
+              >
+                {isGeneratingReport ? (
+                  <>
+                    <div className="button-spinner"></div>
+                    보고서 생성 중...
+                  </>
+                ) : (
+                  'AI 보고서 생성'
+                )}
+              </button>
             )}
 
             {/* 상세보기 토글 버튼 */}

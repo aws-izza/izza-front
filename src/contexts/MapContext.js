@@ -40,7 +40,8 @@ export const MapProvider = ({ children }) => {
   // 토지 상세 사이드바 상태
   const [landDetailSidebar, setLandDetailSidebar] = useState({
     isOpen: false,
-    landId: null
+    landId: null,
+    openedFromAnalysis: false // Track if opened from top 10 analysis results
   });
 
   // 필터 업데이트 함수
@@ -94,12 +95,13 @@ export const MapProvider = ({ children }) => {
   }, []);
 
   // 토지 ID로 지도 이동 및 상세 사이드바 표시 (재사용 가능한 함수)
-  const showLandDetails = useCallback(async (landId, zoomLevel = 1) => {
+  const showLandDetails = useCallback(async (landId, zoomLevel = 1, openedFromAnalysis = false) => {
     try {
       // 1. 토지 상세 사이드바 열기
       setLandDetailSidebar({
         isOpen: true,
-        landId: landId
+        landId: landId,
+        openedFromAnalysis: openedFromAnalysis
       });
 
       // 2. 토지 상세 정보를 가져와서 지도 이동

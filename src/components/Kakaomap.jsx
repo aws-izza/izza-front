@@ -283,11 +283,13 @@ const Kakaomap = () => {
         onClose={() => {
           setLandDetailSidebar({
             isOpen: false,
-            landId: null
+            landId: null,
+            openedFromAnalysis: false
           });
           hideSelectedPolygon(); // 사이드바 닫을 때 선택된 폴리곤도 숨기기
         }}
         landId={landDetailSidebar.landId}
+        openedFromAnalysis={landDetailSidebar.openedFromAnalysis}
       />
     </>
   );

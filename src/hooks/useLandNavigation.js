@@ -11,19 +11,21 @@ export const useLandNavigation = () => {
    * Navigate to a specific land and show its details
    * @param {number|string} landId - The ID of the land to navigate to
    * @param {number} [zoomLevel=1] - The zoom level to use (1 is most zoomed in)
+   * @param {boolean} [fromAnalysis=false] - Whether this navigation is from analysis results
    * @returns {Promise<{success: boolean, error?: any}>} Result of the operation
    */
-  const navigateToLand = async (landId, zoomLevel = 1) => {
-    return await showLandDetails(landId, zoomLevel);
+  const navigateToLand = async (landId, zoomLevel = 1, fromAnalysis = false) => {
+    return await showLandDetails(landId, zoomLevel, fromAnalysis);
   };
 
   /**
    * Navigate to a land without changing zoom level
    * @param {number|string} landId - The ID of the land to navigate to
+   * @param {boolean} [fromAnalysis=false] - Whether this navigation is from analysis results
    * @returns {Promise<{success: boolean, error?: any}>} Result of the operation
    */
-  const showLandDetailsOnly = async (landId) => {
-    return await showLandDetails(landId, null);
+  const showLandDetailsOnly = async (landId, fromAnalysis = false) => {
+    return await showLandDetails(landId, null, fromAnalysis);
   };
 
   return {

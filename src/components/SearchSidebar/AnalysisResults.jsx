@@ -122,8 +122,8 @@ const AnalysisResults = ({ analysisResults }) => {
   const handleLandClick = async (result) => {
     const landId = result.landId;
     
-    // Use the custom hook for cleaner code
-    const response = await navigateToLand(landId, 1);
+    // Use the custom hook for cleaner code, marking it as from analysis
+    const response = await navigateToLand(landId, 1, true);
     
     if (!response.success) {
       console.error('Failed to navigate to land:', response.error);
