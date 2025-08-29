@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { landService } from "../services/landService.js";
 import { useMapContext } from "../contexts/MapContext";
 import { useMapSearch } from "../hooks/useMapSearch";
@@ -7,13 +7,9 @@ import LandDetailSidebar from "./LandDetailSidebar";
 
 /* global kakao */
 const Kakaomap = () => {
-  const { updateMapState, searchResults } = useMapContext();
+  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
   const { showPolygon, hidePolygon, showSelectedPolygon, hideSelectedPolygon, setState } = usePolygonManager();
-
-  // 토지 상세 정보 사이드바 상태
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedLandId, setSelectedLandId] = useState(null);
 
   // 함수들을 ref로 저장하여 안정적인 참조 유지
   const updateMapStateRef = useRef(updateMapState);
@@ -229,9 +225,11 @@ const Kakaomap = () => {
         // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시
         overlayElement.addEventListener("click", () => {
           console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
-          setSelectedLandId(item.id);
-          setIsSidebarOpen(true);
-          
+          setLandDetailSidebar({
+            isOpen: true,
+            landId: item.id
+          });
+
           // 선택된 토지의 폴리곤 표시
           landService
             .getPolygon(item.id, item.type)
@@ -258,7 +256,7 @@ const Kakaomap = () => {
     });
 
     window.currentMarkers = currentMarkers;
-  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon]); // 의존성을 searchResults만으로 최소화
+  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon, setLandDetailSidebar]);
 
   // 사이드바 상태 변경 시 지도 크기 재조정
   useEffect(() => {
@@ -268,7 +266,7 @@ const Kakaomap = () => {
         window.mapInstance.relayout();
       }, 300);
     }
-  }, [isSidebarOpen]);
+  }, [landDetailSidebar.isOpen]);
 
   return (
     <>
@@ -278,16 +276,19 @@ const Kakaomap = () => {
           width: "100%",
           height: "100vh",
           transition: "margin-right 0.3s ease-in-out",
-          marginRight: isSidebarOpen ? "400px" : "0",
+          marginRight: landDetailSidebar.isOpen ? "400px" : "0",
         }}
       ></div>
       <LandDetailSidebar
-        isOpen={isSidebarOpen}
+        isOpen={landDetailSidebar.isOpen}
         onClose={() => {
-          setIsSidebarOpen(false);
+          setLandDetailSidebar({
+            isOpen: false,
+            landId: null
+          });
           hideSelectedPolygon(); // 사이드바 닫을 때 선택된 폴리곤도 숨기기
         }}
-        landId={selectedLandId}
+        landId={landDetailSidebar.landId}
       />
     </>
   );

@@ -63,7 +63,7 @@ const AnalysisTab = () => {
   const [analysisError, setAnalysisError] = useState(null);
   
   // Get analysis results from global context
-  const { analysisResults, setAnalysisResults, moveMapToRegion } = useMapContext();
+  const { analysisResults, setAnalysisResults } = useMapContext();
   
   // 공통 데이터 훅 사용
   const { landAreaRange, landPriceRange, useZoneCategories, isLoading } = useLandData();
@@ -162,17 +162,6 @@ const AnalysisTab = () => {
       
       // Clear any previous errors on successful response
       setAnalysisError(null);
-      
-      // Move map to show the analyzed district
-      try {
-        const regionBoundsResponse = await landService.getRegionBounds(selectedDistrict);
-        if (regionBoundsResponse.data && regionBoundsResponse.data.data) {
-          moveMapToRegion(regionBoundsResponse.data.data);
-        }
-      } catch (error) {
-        console.warn('Failed to get region bounds:', error);
-        // Continue without map movement if bounds fetch fails
-      }
       
       // Scroll to results after a short delay to allow rendering
       setTimeout(() => {

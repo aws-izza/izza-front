@@ -112,23 +112,35 @@ const NoResultsMessage = styled.div`
  * Component to display analysis results showing top 10 highest scoring land
  */
 const AnalysisResults = ({ analysisResults }) => {
-  const { moveMapToLocation } = useMapContext();
+  const { moveMapToLocation, setLandDetailSidebar } = useMapContext();
   const { showPolygon, hidePolygon } = usePolygonManager();
-  
+
   // Handle various response structures
   const landScores = analysisResults?.data?.landScores || analysisResults?.landScores || [];
 
-  // Handle land item click - move map to land center
-  const handleLandClick = async (landId) => {
+  // Handle land item click - show detail sidebar and move map
+  const handleLandClick = async (result) => {
+    const landId = result.landId;
+
+    // Open the land detail sidebar
+    setLandDetailSidebar({
+      isOpen: true,
+      landId: landId
+    });
+
+    // Get land details to find coordinates, then move map
     try {
-      const response = await landService.getLandCoordinates(landId);
-      if (response.data && response.data.data) {
-        const { lat, lng } = response.data.data;
-        // Move to land location with appropriate zoom level
-        moveMapToLocation(lat, lng, 5);
+      const landDetailResponse = await landService.getLandDetail(landId);
+      if (landDetailResponse.data && landDetailResponse.data.data) {
+        const landDetail = landDetailResponse.data.data;
+        if (landDetail.centerPoint && landDetail.centerPoint.lat && landDetail.centerPoint.lng) {
+          // Move map to land location with high zoom level (level 1 is most zoomed in)
+          moveMapToLocation(landDetail.centerPoint.lat, landDetail.centerPoint.lng, 1);
+        }
       }
     } catch (error) {
-      console.error('Failed to get land coordinates:', error);
+      console.error('Failed to get land coordinates for map movement:', error);
+      // Continue without map movement if coordinate fetch fails
     }
   };
 
@@ -179,12 +191,12 @@ const AnalysisResults = ({ analysisResults }) => {
       <ResultsTitle>분석 결과 - 상위 {sortedResults.length}개 부지</ResultsTitle>
       <ResultsList>
         {sortedResults.map((result, index) => (
-          <ResultItem 
+          <ResultItem
             key={result.landId || index}
-            onClick={() => handleLandClick(result.landId)}
+            onClick={() => handleLandClick(result)}
             onMouseEnter={() => handleLandHover(result.landId)}
             onMouseLeave={handleLandLeave}
-            title="클릭하면 지도에서 해당 토지로 이동합니다"
+            title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
           >
             <div>
               <ResultRank>{index + 1}위</ResultRank>

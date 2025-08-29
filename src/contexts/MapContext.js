@@ -22,30 +22,36 @@ const initialMapState = {
 export const MapProvider = ({ children }) => {
   // 필터 상태
   const [searchFilters, setSearchFilters] = useState(initialFilters);
-  
+
   // 지도 상태
   const [mapState, setMapState] = useState(initialMapState);
-  
+
   // 검색 결과 상태
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // 분석 결과 상태
   const [analysisResults, setAnalysisResults] = useState(null);
-  
+
   // 선택된 아이템 상태
   const [selectedItems, setSelectedItems] = useState([]);
-  
+
+  // 토지 상세 사이드바 상태
+  const [landDetailSidebar, setLandDetailSidebar] = useState({
+    isOpen: false,
+    landId: null
+  });
+
   // 필터 업데이트 함수
   const updateFilter = useCallback((key, value) => {
     setSearchFilters(prev => ({ ...prev, [key]: value }));
   }, []);
-  
+
   // 필터 초기화 함수
   const resetFilters = useCallback(() => {
     setSearchFilters(initialFilters);
   }, []);
-  
+
   // 지도 상태 업데이트 함수
   const updateMapState = useCallback((updates) => {
     setMapState(prev => ({ ...prev, ...updates }));
@@ -53,14 +59,16 @@ export const MapProvider = ({ children }) => {
 
   // 지도 중심 이동 함수
   const moveMapToLocation = useCallback((lat, lng, level = null) => {
-    if (window.mapInstance) {
+    if (window.mapInstance && window.kakao && window.kakao.maps) {
       const position = new window.kakao.maps.LatLng(lat, lng);
+
+      // Use the same pattern as the working GROUP marker click
       window.mapInstance.setCenter(position);
-      
+
       if (level !== null) {
         window.mapInstance.setLevel(level);
       }
-      
+
       // 상태도 업데이트
       updateMapState({
         center: { lat, lng },
@@ -73,12 +81,12 @@ export const MapProvider = ({ children }) => {
   const moveMapToRegion = useCallback((bounds) => {
     if (window.mapInstance && bounds) {
       const kakaoMapBounds = new window.kakao.maps.LatLngBounds();
-      
+
       // 경계 좌표들을 추가
       bounds.forEach(coord => {
         kakaoMapBounds.extend(new window.kakao.maps.LatLng(coord.lat, coord.lng));
       });
-      
+
       // 지도를 경계에 맞게 조정
       window.mapInstance.setBounds(kakaoMapBounds);
     }
@@ -92,7 +100,8 @@ export const MapProvider = ({ children }) => {
     isLoading,
     analysisResults,
     selectedItems,
-    
+    landDetailSidebar,
+
     // 액션
     setSearchFilters,
     updateFilter,
@@ -103,6 +112,7 @@ export const MapProvider = ({ children }) => {
     setIsLoading,
     setAnalysisResults,
     setSelectedItems,
+    setLandDetailSidebar,
     moveMapToLocation,
     moveMapToRegion
   };
