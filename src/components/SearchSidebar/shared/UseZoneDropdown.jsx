@@ -7,11 +7,12 @@ const UseZoneDropdown = ({
   useZoneCategories, 
   isLoading = false,
   label = "용도지역",
-  placeholder = "용도지역을 선택하세요"
+  placeholder = "용도지역을 선택하세요",
+  showLabel
 }) => {
   return (
     <DropdownContainer>
-      <DropdownLabel>{label}</DropdownLabel>
+      {showLabel && <DropdownLabel>{label}</DropdownLabel>}
       <Dropdown
         value={value}
         onChange={onChange}

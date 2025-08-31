@@ -256,6 +256,7 @@ const AnalysisTab = () => {
           onChange={(e) => setSelectedUseZone(e.target.value)}
           useZoneCategories={useZoneCategories}
           isLoading={isLoading}
+          showLabel={false}
         />
       </DropdownContainer>
       
