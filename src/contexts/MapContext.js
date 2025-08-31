@@ -44,6 +44,9 @@ export const MapProvider = ({ children }) => {
     openedFromAnalysis: false // Track if opened from top 10 analysis results
   });
 
+  // 포커스된 토지 상태 (특정 토지에 집중할 때 사용)
+  const [focusedLand, setFocusedLand] = useState(null);
+
   // 필터 업데이트 함수
   const updateFilter = useCallback((key, value) => {
     setSearchFilters(prev => ({ ...prev, [key]: value }));
@@ -94,32 +97,75 @@ export const MapProvider = ({ children }) => {
     }
   }, []);
 
-  // 토지 ID로 지도 이동 및 상세 사이드바 표시 (재사용 가능한 함수)
-  const showLandDetails = useCallback(async (landId, zoomLevel = 1, openedFromAnalysis = false) => {
-    try {
-      // 1. 토지 상세 사이드바 열기
-      setLandDetailSidebar({
-        isOpen: true,
-        landId: landId,
-        openedFromAnalysis: openedFromAnalysis
-      });
+  // 토지에 포커스하는 범용 함수 (지도 이동, 포커스 모드 활성화, 폴리곤 표시, 상세정보 표시)
+  const focusOnLand = useCallback(async (landId, options = {}) => {
+    const {
+      zoomLevel = 2,
+      showSidebar = true,
+      showPolygon = true,
+      disableSearch = false,
+      openedFromAnalysis = false
+    } = options;
 
-      // 2. 토지 상세 정보를 가져와서 지도 이동
+    try {
+
+      // 1. 토지 상세 정보 가져오기
       const landDetailResponse = await landService.getLandDetail(landId);
-      if (landDetailResponse.data && landDetailResponse.data.data) {
-        const landDetail = landDetailResponse.data.data;
-        if (landDetail.centerPoint && landDetail.centerPoint.lat && landDetail.centerPoint.lng) {
-          // 지도를 토지 위치로 이동
-          moveMapToLocation(landDetail.centerPoint.lat, landDetail.centerPoint.lng, zoomLevel);
-        }
+      if (!landDetailResponse.data || !landDetailResponse.data.data) {
+        throw new Error('토지 정보를 가져올 수 없습니다');
       }
 
-      return { success: true };
+      const landDetail = landDetailResponse.data.data;
+
+      // 2. 포커스된 토지 상태 설정
+      setFocusedLand({
+        id: landId,
+        data: landDetail,
+        showPolygon,
+        timestamp: Date.now()
+      });
+
+      // 3. 상세 사이드바 표시
+      if (showSidebar) {
+        setLandDetailSidebar({
+          isOpen: true,
+          landId: landId,
+          openedFromAnalysis: openedFromAnalysis
+        });
+      }
+
+      // 4. 지도 이동
+      if (landDetail.centerPoint && landDetail.centerPoint.lat && landDetail.centerPoint.lng) {
+        moveMapToLocation(landDetail.centerPoint.lat, landDetail.centerPoint.lng, zoomLevel);
+      }
+
+      return { success: true, landDetail };
     } catch (error) {
-      console.error('Failed to show land details:', error);
+      console.error('토지 포커스 실패:', error);
+      setFocusedLand(null);
       return { success: false, error };
     }
-  }, [setLandDetailSidebar, moveMapToLocation]);
+  }, [setLandDetailSidebar, setFocusedLand, moveMapToLocation]);
+
+  // 토지 포커스 해제 함수
+  const clearLandFocus = useCallback(() => {
+    setFocusedLand(null);
+    
+    // 상세 사이드바도 닫기
+    setLandDetailSidebar({
+      isOpen: false,
+      landId: null,
+      openedFromAnalysis: false
+    });
+  }, [setFocusedLand, setLandDetailSidebar]);
+
+  // 기존 showLandDetails 함수 유지 (하위 호환성)
+  const showLandDetails = useCallback(async (landId, zoomLevel = 1, openedFromAnalysis = false) => {
+    return await focusOnLand(landId, { 
+      zoomLevel, 
+      openedFromAnalysis 
+    });
+  }, [focusOnLand]);
 
   const value = {
     // 상태
@@ -130,6 +176,7 @@ export const MapProvider = ({ children }) => {
     analysisResults,
     selectedItems,
     landDetailSidebar,
+    focusedLand,
 
     // 액션
     setSearchFilters,
@@ -142,8 +189,11 @@ export const MapProvider = ({ children }) => {
     setAnalysisResults,
     setSelectedItems,
     setLandDetailSidebar,
+    setFocusedLand,
     moveMapToLocation,
     moveMapToRegion,
+    focusOnLand,
+    clearLandFocus,
     showLandDetails
   };
 

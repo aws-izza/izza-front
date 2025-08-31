@@ -30,7 +30,10 @@ export const landService = {
 
   // 주소 자동완성
   getAutoComplete: (q) =>
-    apiClient.get("/api/v1/ac/auto-complete", { params: { q } }),
+    apiClient.get("/api/v1/ac/auto-complete", { 
+      baseURL: "https://api.izza-nopizza.com/",
+      params: { q } 
+    }),
 
   // 토지 상세 정보 조회
   getLandDetail: (landId) =>
@@ -43,6 +46,10 @@ export const landService = {
   // 지역 정보 조회 (시도, 시군구)
   getRegions: (prefix) =>
     apiClient.get(`/api/v1/base-info/regions?prefix=${prefix}`),
+
+  // 주소로 토지 검색
+  searchByAddress: (address) =>
+    apiClient.get(`/api/v1/land-search/address/${encodeURIComponent(address)}`),
 
   /**
    * 토지 분석 실행

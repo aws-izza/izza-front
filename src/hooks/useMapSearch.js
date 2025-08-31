@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { useMapContext } from '../contexts/MapContext';
 import { landService } from '../services/landService';
 
+
 export const useMapSearch = () => {
   const { 
     searchFilters, 

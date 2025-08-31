@@ -7,7 +7,7 @@ import LandDetailSidebar from "./LandDetailSidebar";
 
 /* global kakao */
 const Kakaomap = () => {
-  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar, showLandDetails } = useMapContext();
+  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar, showLandDetails, focusedLand, setFocusedLand } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
   const { showPolygon, hidePolygon, showSelectedPolygon, hideSelectedPolygon, setState } = usePolygonManager();
 
@@ -133,9 +133,9 @@ const Kakaomap = () => {
     };
   }, []); // 빈 의존성 배열로 한 번만 실행
 
-  // searchResults가 변경될 때마다 마커 렌더링
+  // 마커 렌더링 (검색 결과 + 포커스된 토지)
   useEffect(() => {
-    if (!window.mapInstance || !searchResults) {
+    if (!window.mapInstance) {
       return;
     }
 
@@ -149,14 +149,43 @@ const Kakaomap = () => {
     currentMarkers = [];
     window.currentMarkers = [];
 
-    if (searchResults.length === 0) {
-      console.log("검색 결과가 없습니다.");
+    // 렌더링할 항목들 수집
+    let itemsToRender = [];
+
+    // 1. 검색 결과 추가
+    if (searchResults && searchResults.length > 0) {
+      itemsToRender = [...searchResults];
+    }
+
+    // 2. 포커스된 토지 추가 (검색 결과에 같은 ID가 없는 경우만)
+    if (focusedLand && focusedLand.data) {
+      const existsInSearchResults = itemsToRender.some(item => 
+        item.id === focusedLand.id || item.id === focusedLand.id.toString()
+      );
+      
+      if (!existsInSearchResults && focusedLand.data.centerPoint) {
+        itemsToRender.push({
+          id: focusedLand.id,
+          type: "LAND",
+          name: focusedLand.data.address,
+          point: {
+            lat: focusedLand.data.centerPoint.lat,
+            lng: focusedLand.data.centerPoint.lng
+          },
+          isFocused: true // 포커스된 토지 표시용
+        });
+
+      }
+    }
+
+    if (itemsToRender.length === 0) {
+      console.log("렌더링할 마커가 없습니다.");
       return;
     }
 
-    console.log("마커 렌더링:", searchResults.length, "개");
+    console.log("마커 렌더링:", itemsToRender.length, "개");
 
-    searchResults.forEach((item) => {
+    itemsToRender.forEach((item) => {
       console.log("마커 좌표:", item.point.lat, item.point.lng);
 
       const position = new kakao.maps.LatLng(
@@ -226,20 +255,8 @@ const Kakaomap = () => {
         overlayElement.addEventListener("click", async () => {
           console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
           
-          // Use the reusable function from MapContext (no zoom change for map markers)
+          // LandDetailSidebar에서 폴리곤을 자동으로 처리하므로 여기서는 사이드바만 열기
           await showLandDetails(item.id, null);
-
-          // 선택된 토지의 폴리곤 표시
-          landService
-            .getPolygon(item.id, item.type)
-            .then((res) => {
-              console.log("선택된 토지 폴리곤 데이터:", res.data);
-              const polygonDataList = res.data.data.polygon;
-              showSelectedPolygon(polygonDataList, map);
-            })
-            .catch((err) => {
-              console.error("선택된 토지 폴리곤 로드 실패:", err);
-            });
         });
       }
 
@@ -255,7 +272,7 @@ const Kakaomap = () => {
     });
 
     window.currentMarkers = currentMarkers;
-  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon, showLandDetails, setLandDetailSidebar]);
+  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon, showLandDetails, setLandDetailSidebar, focusedLand]);
 
   // 사이드바 상태 변경 시 지도 크기 재조정
   useEffect(() => {
@@ -286,7 +303,7 @@ const Kakaomap = () => {
             landId: null,
             openedFromAnalysis: false
           });
-          hideSelectedPolygon(); // 사이드바 닫을 때 선택된 폴리곤도 숨기기
+          setFocusedLand(null); // 포커스된 토지도 제거
         }}
         landId={landDetailSidebar.landId}
         openedFromAnalysis={landDetailSidebar.openedFromAnalysis}

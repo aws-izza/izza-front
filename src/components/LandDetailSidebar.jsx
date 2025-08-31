@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { landService } from "../services/landService";
+import { usePolygonManager } from "../hooks/usePolygonManager";
 import PopulationChart from "./PopulationChart";
 import { useMapContext } from "../contexts/MapContext";
 import "../styles/LandDetailSidebar.css";
@@ -12,6 +13,7 @@ const LandDetailSidebar = ({ isOpen, onClose, landId, openedFromAnalysis = false
   const [error, setError] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const { showSelectedPolygon, hideSelectedPolygon } = usePolygonManager();
 
   const fetchLandDetail = useCallback(async () => {
     if (!landId) return;
@@ -27,6 +29,17 @@ const LandDetailSidebar = ({ isOpen, onClose, landId, openedFromAnalysis = false
       // 지역 정보는 별도로 로드 (기본 정보에 포함)
       const areaResponse = await landService.getAreaInfo(landId);
       setAreaInfo(areaResponse.data.data);
+
+      // 폴리곤 표시
+      if (window.mapInstance) {
+        try {
+          const polygonResponse = await landService.getPolygon(landId, "LAND");
+          const polygonDataList = polygonResponse.data.data.polygon;
+          showSelectedPolygon(polygonDataList, window.mapInstance);
+        } catch (polygonError) {
+          console.error("폴리곤 로드 실패:", polygonError);
+        }
+      }
     } catch (err) {
       console.error("토지 상세 정보 조회 실패:", err);
       setError("토지 정보를 불러오는데 실패했습니다.");
@@ -38,8 +51,11 @@ const LandDetailSidebar = ({ isOpen, onClose, landId, openedFromAnalysis = false
   useEffect(() => {
     if (isOpen && landId) {
       fetchLandDetail();
+    } else if (!isOpen) {
+      // 사이드바가 닫힐 때 폴리곤 숨기기
+      hideSelectedPolygon();
     }
-  }, [fetchLandDetail, isOpen, landId]);
+  }, [fetchLandDetail, isOpen, landId, hideSelectedPolygon]);
 
   const formatPrice = (price) => {
     if (!price) return "-";
