@@ -104,7 +104,8 @@ export const MapProvider = ({ children }) => {
       showSidebar = true,
       showPolygon = true,
       disableSearch = false,
-      openedFromAnalysis = false
+      openedFromAnalysis = false,
+      moveMap = true
     } = options;
 
     try {
@@ -134,8 +135,8 @@ export const MapProvider = ({ children }) => {
         });
       }
 
-      // 4. 지도 이동
-      if (landDetail.centerPoint && landDetail.centerPoint.lat && landDetail.centerPoint.lng) {
+      // 4. 지도 이동 (moveMap 옵션이 true인 경우에만)
+      if (moveMap && landDetail.centerPoint && landDetail.centerPoint.lat && landDetail.centerPoint.lng) {
         moveMapToLocation(landDetail.centerPoint.lat, landDetail.centerPoint.lng, zoomLevel);
       }
 

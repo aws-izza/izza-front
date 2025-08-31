@@ -7,7 +7,7 @@ import LandDetailSidebar from "./LandDetailSidebar";
 
 /* global kakao */
 const Kakaomap = () => {
-  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar, showLandDetails, focusedLand, setFocusedLand } = useMapContext();
+  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar, showLandDetails, focusedLand, setFocusedLand, focusOnLand } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
   const { showPolygon, hidePolygon, showSelectedPolygon, hideSelectedPolygon, setState } = usePolygonManager();
 
@@ -251,12 +251,12 @@ const Kakaomap = () => {
           console.log(`GROUP 마커 클릭: ${item.name}, 새 줌 레벨: ${newLevel}`);
         });
       } else if (item.type === "LAND") {
-        // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시
+        // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시 (지도 이동 없이)
         overlayElement.addEventListener("click", async () => {
           console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
           
-          // LandDetailSidebar에서 폴리곤을 자동으로 처리하므로 여기서는 사이드바만 열기
-          await showLandDetails(item.id, null);
+          // 포커스 모드는 활성화하되 지도 이동은 하지 않음
+          await focusOnLand(item.id, { moveMap: false });
         });
       }
 
@@ -272,7 +272,7 @@ const Kakaomap = () => {
     });
 
     window.currentMarkers = currentMarkers;
-  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon, showLandDetails, setLandDetailSidebar, focusedLand]);
+  }, [hidePolygon, searchResults, showPolygon, showSelectedPolygon, focusOnLand, setLandDetailSidebar, focusedLand]);
 
   // 사이드바 상태 변경 시 지도 크기 재조정
   useEffect(() => {

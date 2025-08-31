@@ -76,6 +76,11 @@ const SearchAutoComplete = ({
     if (searchInputRef?.current) {
       searchInputRef.current.blur();
     }
+
+    // 자동완성 항목 선택 시 자동으로 검색 실행 (엔터를 누른 것과 동일 효과)
+    if (onSearch) {
+      onSearch(suggestion);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -115,7 +120,10 @@ const SearchAutoComplete = ({
   };
 
   const handleInputFocus = () => {
-    if (suggestions.length > 0) {
+    // 현재 입력값이 있으면 API를 다시 호출하여 최신 자동완성 목록을 가져옴
+    if (value && value.trim()) {
+      searchSuggestions(value.trim(), 0); // 즉시 호출 (디바운스 없음)
+    } else if (suggestions.length > 0) {
       showSuggestionsList();
     }
   };
