@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAutoComplete } from '../../hooks/useAutoComplete';
+import MagnifyingGlass from './MagnifyingGlass';
 import {
   SearchInput,
   SearchIcon,
@@ -148,7 +149,9 @@ const SearchAutoComplete = ({
         onKeyDown={handleKeyDown}
         autoComplete="off"
       />
-      <SearchIcon>🔍</SearchIcon>
+      <SearchIcon>
+        <MagnifyingGlass width={16} height={16} />
+      </SearchIcon>
 
       {showSuggestions && (
         <AutoCompleteContainer>

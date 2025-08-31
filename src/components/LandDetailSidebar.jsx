@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { landService } from "../services/landService";
 import { usePolygonManager } from "../hooks/usePolygonManager";
+import { useFavorites } from "../hooks/useFavorites";
 import PopulationChart from "./PopulationChart";
+import Star from "./Star";
 import "../styles/LandDetailSidebar.css";
 
 const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
@@ -11,6 +13,7 @@ const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
   const [error, setError] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const { showSelectedPolygon, hideSelectedPolygon } = usePolygonManager();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const fetchLandDetail = useCallback(async () => {
     if (!landId) return;
@@ -64,6 +67,24 @@ const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
     return new Intl.NumberFormat("ko-KR").format(area) + "㎡";
   };
 
+  const handleFavoriteClick = () => {
+    if (!landDetail) return;
+    
+    const favoriteData = {
+      id: landDetail.id,
+      pnu: landDetail.uniqueNo,
+      address: landDetail.address,
+      landArea: landDetail.landArea,
+      officialLandPrice: landDetail.officialLandPrice,
+      useDistrictName1: landDetail.useDistrictName1,
+      landCategoryName: landDetail.landCategoryName,
+      landUseName: landDetail.landUseName,
+      terrainShapeName: landDetail.terrainShapeName
+    };
+    
+    toggleFavorite(favoriteData);
+  };
+
 
 
 
@@ -94,8 +115,17 @@ const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
           <div className="detail-content">
             {/* 토지 제목 */}
             <div className="land-title">
-              <h3>{landDetail.address}</h3>
-              <span className="land-id">{landDetail.uniqueNo}</span>
+              <div className="land-title-content">
+                <h3>{landDetail.address}</h3>
+                <span className="land-id">{landDetail.uniqueNo}</span>
+              </div>
+              <button 
+                className={`favorite-button ${isFavorite(landDetail.id) ? 'active' : ''}`}
+                onClick={handleFavoriteClick}
+                title={isFavorite(landDetail.id) ? '찜 해제' : '찜하기'}
+              >
+                <Star width={20} height={20} active={isFavorite(landDetail.id)} />
+              </button>
             </div>
 
             {/* 기본 정보 (항상 표시) */}

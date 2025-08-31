@@ -100,6 +100,13 @@
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.land-title-content {
+  flex: 1;
 }
 
 .land-title h3 {
@@ -114,6 +121,31 @@
   font-size: 14px;
   color: #6b7280;
   font-weight: 500;
+}
+
+.favorite-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 12px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-button:hover {
+  background-color: #f3f4f6;
+  transform: scale(1.1);
+}
+
+.favorite-button.active:hover {
+  background-color: #fef3c7;
 }
 
 .basic-info {

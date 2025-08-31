@@ -7,9 +7,11 @@ import {
   TabContainer,
   Tab,
 } from "./SearchSidebar/styles";
+import IzZaLogo from "./SearchSidebar/IzZaLogo";
 import ExploreTab from "./SearchSidebar/ExploreTab";
 import AnalysisTab from "./SearchSidebar/AnalysisTab";
 import MarketTab from "./SearchSidebar/MarketTab";
+import SavedTab from "./SearchSidebar/SavedTab";
 
 const SearchSidebar = () => {
   const [activeTab, setActiveTab] = useState("탐색");
@@ -17,12 +19,9 @@ const SearchSidebar = () => {
   return (
     <SidebarContainer>
       <Header>
-        <Logo>🦊</Logo>
-        <Title>
-          원하는 조건에 맞는
-          <br />
-          부지를 찾아보세요!
-        </Title>
+        <Logo>
+          <IzZaLogo width={72} height={32} />
+        </Logo>
       </Header>
 
       <TabContainer>
@@ -42,6 +41,7 @@ const SearchSidebar = () => {
 
       {activeTab === "탐색" && <ExploreTab />}
       {activeTab === "분석" && <AnalysisTab />}
+      {activeTab === "저장" && <SavedTab />}
       {activeTab === "시장" && <MarketTab />}
     </SidebarContainer>
   );
