@@ -140,13 +140,13 @@ const ExploreTab = () => {
       </SearchBox>
 
       <FilterSection>
-        <FilterTitle>필터지역</FilterTitle>
-
         <UseZoneDropdown
           value={searchFilters.useZoneCategory}
           onChange={(e) => updateFilter("useZoneCategory", e.target.value)}
           useZoneCategories={useZoneCategories}
           isLoading={isLoading}
+          label="용도지역"
+          showLabel={true}
         />
 
         <RangeSlider

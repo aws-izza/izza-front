@@ -66,7 +66,7 @@ const RangeSlider = ({
       <SliderLabel>{label}</SliderLabel>
       
       {showInputs && (
-        <RangeInputContainer>
+        <RangeInputContainer style={{ marginBottom: "16px" }}>
           <RangeInput 
             type="text" 
             value={formatNumber(value[0])}
