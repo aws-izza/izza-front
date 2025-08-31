@@ -33,49 +33,46 @@ import {
 } from './styles';
 
 const AnalysisTab = () => {
-  const [analysisStep, setAnalysisStep] = useState(1);
-  const [selectedIndicators, setSelectedIndicators] = useState({
-    토지면적: false,
-    공시지가: false,
-    전기요금: false,
-    송전탑: false,
-    인구밀도: false,
-    변전소: false,
-    전기선: false,
-    연간재난문자: false,
-  });
-  const [indicatorWeights, setIndicatorWeights] = useState({
-    토지면적: 80,
-    공시지가: 80,
-    전기요금: 80,
-    송전탑: 80,
-    인구밀도: 80,
-    변전소: 80,
-    전기선: 80,
-    연간재난문자: 80,
-  });
-  const [indicatorRanges, setIndicatorRanges] = useState({});
-  const [sliderValues, setSliderValues] = useState({});
-  const [selectedUseZone, setSelectedUseZone] = useState('');
   
-  // Analysis execution state management
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisError, setAnalysisError] = useState(null);
-  
-  // Get analysis results from global context
-  const { analysisResults, setAnalysisResults } = useMapContext();
+  // Get analysis states from global context
+  const { 
+    analysisStep, setAnalysisStep,
+    analysisResults, setAnalysisResults,
+    showAnalysisResults, setShowAnalysisResults,
+    selectedIndicators, setSelectedIndicators,
+    indicatorWeights, setIndicatorWeights,
+    indicatorRanges, setIndicatorRanges,
+    sliderValues, setSliderValues,
+    selectedUseZone, setSelectedUseZone,
+    isAnalyzing, setIsAnalyzing,
+    analysisError, setAnalysisError,
+    analysisSelectedRegion, setAnalysisSelectedRegion,
+    analysisSelectedDistrict, setAnalysisSelectedDistrict
+  } = useMapContext();
   
   // 공통 데이터 훅 사용
   const { landAreaRange, landPriceRange, useZoneCategories, isLoading } = useLandData();
   const {
     regions,
     districts,
-    selectedRegion,
-    selectedDistrict,
     isLoadingDistricts,
     handleRegionChange,
     handleDistrictChange,
   } = useRegionData();
+
+  // Analysis-specific region handlers
+  const handleAnalysisRegionChange = (event) => {
+    const regionCode = event.target.value;
+    setAnalysisSelectedRegion(regionCode);
+    setAnalysisSelectedDistrict(''); // Reset district when region changes
+    handleRegionChange(event);
+  };
+
+  const handleAnalysisDistrictChange = (event) => {
+    const districtCode = event.target.value;
+    setAnalysisSelectedDistrict(districtCode);
+    handleDistrictChange(event);
+  };
 
   // 데이터 로드 완료 시 슬라이더 초기값 설정
   useEffect(() => {
@@ -112,7 +109,7 @@ const AnalysisTab = () => {
 
   // 단계별 필수값 검증
   const isStep1Valid = () => {
-    return selectedRegion && selectedDistrict && selectedUseZone;
+    return analysisSelectedRegion && analysisSelectedDistrict && selectedUseZone;
   };
 
   const isStep2Valid = () => {
@@ -137,10 +134,10 @@ const AnalysisTab = () => {
     
     try {
       // Build request payload using transformation utilities
-      console.log(selectedDistrict);
+      console.log(analysisSelectedDistrict);
       const requestPayload = buildAnalysisRequestPayload({
-        selectedRegion,
-        selectedDistrict,
+        selectedRegion: analysisSelectedRegion,
+        selectedDistrict: analysisSelectedDistrict,
         selectedUseZone,
         selectedIndicators,
         indicatorWeights,
@@ -163,13 +160,8 @@ const AnalysisTab = () => {
       // Clear any previous errors on successful response
       setAnalysisError(null);
       
-      // Scroll to results after a short delay to allow rendering
-      setTimeout(() => {
-        const resultsElement = document.querySelector('[data-analysis-results]');
-        if (resultsElement) {
-          resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
+      // Show results screen
+      setShowAnalysisResults(true);
       
     } catch (error) {
       // Handle different error types with user-friendly messages
@@ -248,10 +240,10 @@ const AnalysisTab = () => {
         <RegionSelector
           regions={regions}
           districts={districts}
-          selectedRegion={selectedRegion}
-          selectedDistrict={selectedDistrict}
-          onRegionChange={handleRegionChange}
-          onDistrictChange={handleDistrictChange}
+          selectedRegion={analysisSelectedRegion}
+          selectedDistrict={analysisSelectedDistrict}
+          onRegionChange={handleAnalysisRegionChange}
+          onDistrictChange={handleAnalysisDistrictChange}
           isLoading={isLoading}
           isLoadingDistricts={isLoadingDistricts}
         />
@@ -485,23 +477,66 @@ const AnalysisTab = () => {
     </>
   );
 
-  return (
+  const renderResults = () => (
     <>
-      <FilterSection>
-        <FilterTitle>분석 단계 {analysisStep}/3</FilterTitle>
-        
-        {analysisStep === 1 && renderStep1()}
-        {analysisStep === 2 && renderStep2()}
-        {analysisStep === 3 && renderStep3()}
-      </FilterSection>
-      
-      {/* Display analysis results after successful analysis */}
-      {analysisResults && (
-        <div data-analysis-results>
-          <AnalysisResults analysisResults={analysisResults} />
-        </div>
-      )}
+      <FilterTitle>분석 결과</FilterTitle>
+      <AnalysisResults analysisResults={analysisResults} />
+      <StyledSearchButton 
+        onClick={() => {
+          // 분석 결과 상태 초기화
+          setShowAnalysisResults(false);
+          setAnalysisStep(1);
+          setAnalysisResults(null);
+          
+          // 분석 폼 상태 초기화
+          setAnalysisSelectedRegion('');
+          setAnalysisSelectedDistrict('');
+          setSelectedUseZone('');
+          setSelectedIndicators({
+            토지면적: false,
+            공시지가: false,
+            전기요금: false,
+            송전탑: false,
+            인구밀도: false,
+            변전소: false,
+            전기선: false,
+            연간재난문자: false,
+          });
+          setIndicatorWeights({
+            토지면적: 80,
+            공시지가: 80,
+            전기요금: 80,
+            송전탑: 80,
+            인구밀도: 80,
+            변전소: 80,
+            전기선: 80,
+            연간재난문자: 80,
+          });
+          setIndicatorRanges({});
+          setSliderValues({});
+          setIsAnalyzing(false);
+          setAnalysisError(null);
+        }}
+        style={{ marginTop: '20px' }}
+      >
+        새 분석 시작
+      </StyledSearchButton>
     </>
+  );
+
+  return (
+    <FilterSection>
+      {showAnalysisResults ? (
+        renderResults()
+      ) : (
+        <>
+          <FilterTitle>분석 단계 {analysisStep}/3</FilterTitle>
+          {analysisStep === 1 && renderStep1()}
+          {analysisStep === 2 && renderStep2()}
+          {analysisStep === 3 && renderStep3()}
+        </>
+      )}
+    </FilterSection>
   );
 };
 

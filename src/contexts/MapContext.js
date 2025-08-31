@@ -31,8 +31,39 @@ export const MapProvider = ({ children }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 분석 결과 상태
+  // 분석 관련 상태
+  const [analysisStep, setAnalysisStep] = useState(1);
   const [analysisResults, setAnalysisResults] = useState(null);
+  const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+  const [selectedIndicators, setSelectedIndicators] = useState({
+    토지면적: false,
+    공시지가: false,
+    전기요금: false,
+    송전탑: false,
+    인구밀도: false,
+    변전소: false,
+    전기선: false,
+    연간재난문자: false,
+  });
+  const [indicatorWeights, setIndicatorWeights] = useState({
+    토지면적: 80,
+    공시지가: 80,
+    전기요금: 80,
+    송전탑: 80,
+    인구밀도: 80,
+    변전소: 80,
+    전기선: 80,
+    연간재난문자: 80,
+  });
+  const [indicatorRanges, setIndicatorRanges] = useState({});
+  const [sliderValues, setSliderValues] = useState({});
+  const [selectedUseZone, setSelectedUseZone] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
+  
+  // 분석용 지역 선택 상태 (별도 관리)
+  const [analysisSelectedRegion, setAnalysisSelectedRegion] = useState('');
+  const [analysisSelectedDistrict, setAnalysisSelectedDistrict] = useState('');
 
   // 선택된 아이템 상태
   const [selectedItems, setSelectedItems] = useState([]);
@@ -174,7 +205,18 @@ export const MapProvider = ({ children }) => {
     mapState,
     searchResults,
     isLoading,
+    analysisStep,
     analysisResults,
+    showAnalysisResults,
+    selectedIndicators,
+    indicatorWeights,
+    indicatorRanges,
+    sliderValues,
+    selectedUseZone,
+    isAnalyzing,
+    analysisError,
+    analysisSelectedRegion,
+    analysisSelectedDistrict,
     selectedItems,
     landDetailSidebar,
     focusedLand,
@@ -187,7 +229,18 @@ export const MapProvider = ({ children }) => {
     updateMapState,
     setSearchResults,
     setIsLoading,
+    setAnalysisStep,
     setAnalysisResults,
+    setShowAnalysisResults,
+    setSelectedIndicators,
+    setIndicatorWeights,
+    setIndicatorRanges,
+    setSliderValues,
+    setSelectedUseZone,
+    setIsAnalyzing,
+    setAnalysisError,
+    setAnalysisSelectedRegion,
+    setAnalysisSelectedDistrict,
     setSelectedItems,
     setLandDetailSidebar,
     setFocusedLand,

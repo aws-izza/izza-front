@@ -5,31 +5,14 @@ import { useLandNavigation } from '../../hooks/useLandNavigation';
 import { landService } from '../../services/landService';
 
 const ResultsContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
   margin-top: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  animation: slideIn 0.3s ease-out;
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 `;
 
 const ResultsTitle = styled.h3`
   color: #333;
-  font-size: 16px;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #4caf50;
+  font-size: 18px;
+  margin-bottom: 20px;
+  font-weight: 600;
 `;
 
 const ResultsList = styled.div`
@@ -46,7 +29,6 @@ const ResultItem = styled.div`
   padding: 12px;
   border-left: 4px solid #4caf50;
   transition: all 0.2s ease;
-  cursor: pointer;
 
   &:hover {
     background: #e8f5e8;
@@ -58,6 +40,50 @@ const ResultItem = styled.div`
     background: #e3f2fd;
     border-left-color: #2196f3;
     box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  }
+`;
+
+const ResultItemContent = styled.div`
+  cursor: pointer;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+`;
+
+const ActionButton = styled.button`
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &.view-button {
+    background: #3b82f6;
+    color: white;
+    
+    &:hover {
+      background: #2563eb;
+    }
+  }
+  
+  &.report-button {
+    background: #10b981;
+    color: white;
+    
+    &:hover {
+      background: #059669;
+    }
+    
+    &:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
   }
 `;
 
@@ -104,8 +130,6 @@ const NoResultsMessage = styled.div`
   color: #666;
   font-size: 14px;
   padding: 20px;
-  background: #f5f5f5;
-  border-radius: 8px;
 `;
 
 /**
@@ -127,6 +151,21 @@ const AnalysisResults = ({ analysisResults }) => {
     
     if (!response.success) {
       console.error('Failed to navigate to land:', response.error);
+    }
+  };
+  
+  // Handle report generation
+  const handleReportGeneration = async (result, event) => {
+    event.stopPropagation(); // Prevent triggering land click
+    const landId = result.landId;
+    
+    try {
+      // TODO: Implement report generation logic
+      console.log('Generating report for land:', landId);
+      alert('보고서 생성 기능을 구현 예정입니다.');
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+      alert('보고서 생성에 실패했습니다.');
     }
   };
 
@@ -179,39 +218,50 @@ const AnalysisResults = ({ analysisResults }) => {
         {sortedResults.map((result, index) => (
           <ResultItem
             key={result.landId || index}
-            onClick={() => handleLandClick(result)}
             onMouseEnter={() => handleLandHover(result.landId)}
             onMouseLeave={handleLandLeave}
-            title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
           >
-            <div>
-              <ResultRank>{index + 1}위</ResultRank>
-              <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
-            </div>
-
-            <ResultAddress>
-              {result.address || '주소 정보 없음'}
-            </ResultAddress>
-
-            <ResultDetails>
-              <ResultDetail>
-                면적: {formatNumber(result.landArea)}㎡
-              </ResultDetail>
-              <ResultDetail>
-                공시지가: {formatNumber(result.officialLandPrice)}원/㎡
-              </ResultDetail>
-            </ResultDetails>
-
-            {/* Display category scores if available */}
-            {result.categoryScores && result.categoryScores.length > 0 && (
-              <div style={{ marginTop: '8px', fontSize: '11px', color: '#888' }}>
-                {result.categoryScores.map((category, idx) => (
-                  <span key={idx} style={{ marginRight: '8px' }}>
-                    {category.categoryName}: {formatScore(category.totalScore)}점
-                  </span>
-                ))}
+            <ResultItemContent
+              onClick={() => handleLandClick(result)}
+              title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
+            >
+              <div>
+                <ResultRank>{index + 1}위</ResultRank>
+                <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
               </div>
-            )}
+
+              <ResultAddress>
+                {result.address || '주소 정보 없음'}
+              </ResultAddress>
+
+              {/* Display category scores if available */}
+              {result.categoryScores && result.categoryScores.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '11px', color: '#888' }}>
+                  {result.categoryScores.map((category, idx) => (
+                    <span key={idx} style={{ marginRight: '8px' }}>
+                      {category.categoryName}: {formatScore(category.totalScore)}점
+                    </span>
+                  ))}
+                </div>
+              )}
+            </ResultItemContent>
+            
+            <ButtonContainer>
+              <ActionButton 
+                className="view-button"
+                onClick={() => handleLandClick(result)}
+                title="상세 정보 보기"
+              >
+                상세 보기
+              </ActionButton>
+              <ActionButton 
+                className="report-button"
+                onClick={(e) => handleReportGeneration(result, e)}
+                title="AI 보고서 생성"
+              >
+                보고서 생성
+              </ActionButton>
+            </ButtonContainer>
           </ResultItem>
         ))}
       </ResultsList>
