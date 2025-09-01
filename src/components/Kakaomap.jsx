@@ -196,22 +196,31 @@ const Kakaomap = () => {
       // DOM 요소를 직접 생성
       const overlayElement = document.createElement("div");
       overlayElement.style.cssText = `
-        background: white;
-        border: 2px solid #333;
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: bold;
-        color: #333;
-        text-align: center;
+        position: relative;
+        width: 24px;
+        height: 24px;
+        background: #5E9F00;
+        border: 2px solid white;
+        border-radius: 50%;
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         cursor: pointer;
-        min-width: 60px;
       `;
-      overlayElement.textContent =
-        item.type === "GROUP"
-          ? `${item.name || "마커"} : ${item.count}`
-          : `${item.name || "마커"}`;
+
+      // 꼬리(삼각형) 추가
+      const tail = document.createElement("div");
+      tail.style.cssText = `
+        position: absolute;
+        bottom: -8px;                 /* 원 아래 붙게 */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 8px solid ##5E9F00;
+      `;
+
+      overlayElement.appendChild(tail);
 
       // 마우스 오버 이벤트 - 폴리곤 표시
       overlayElement.addEventListener("mouseenter", () => {
@@ -254,7 +263,7 @@ const Kakaomap = () => {
         // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시 (지도 이동 없이)
         overlayElement.addEventListener("click", async () => {
           console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
-          
+
           // 포커스 모드는 활성화하되 지도 이동은 하지 않음
           await focusOnLand(item.id, { moveMap: false });
         });
