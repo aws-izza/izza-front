@@ -200,7 +200,7 @@ const Kakaomap = () => {
         width: 28px;
         height: 28px;
         background: #5E9F00;
-        border-radious: 50% 50% 50% 0;
+        border-radius: 50% 50% 50% 0;
         transform: rotate(-45deg);
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       `;
