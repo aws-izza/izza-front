@@ -4,12 +4,28 @@ import { useMapContext } from "../contexts/MapContext";
 import { useMapSearch } from "../hooks/useMapSearch";
 import { usePolygonManager } from "../hooks/usePolygonManager";
 import LandDetailSidebar from "./LandDetailSidebar";
+import MarkerIcon from "../images/Marker.svg";
 
 /* global kakao */
 const Kakaomap = () => {
-  const { updateMapState, searchResults, landDetailSidebar, setLandDetailSidebar, showLandDetails, focusedLand, setFocusedLand, focusOnLand } = useMapContext();
+  const {
+    updateMapState,
+    searchResults,
+    landDetailSidebar,
+    setLandDetailSidebar,
+    showLandDetails,
+    focusedLand,
+    setFocusedLand,
+    focusOnLand,
+  } = useMapContext();
   const { searchPoints, cancelPendingSearch } = useMapSearch();
-  const { showPolygon, hidePolygon, showSelectedPolygon, hideSelectedPolygon, setState } = usePolygonManager();
+  const {
+    showPolygon,
+    hidePolygon,
+    showSelectedPolygon,
+    hideSelectedPolygon,
+    setState,
+  } = usePolygonManager();
 
   // 함수들을 ref로 저장하여 안정적인 참조 유지
   const updateMapStateRef = useRef(updateMapState);
@@ -135,16 +151,21 @@ const Kakaomap = () => {
 
   // 마커 렌더링 (검색 결과 + 포커스된 토지)
   useEffect(() => {
-    if (!window.mapInstance) {
-      return;
-    }
-
+    if (!window.mapInstance) return;
     const map = window.mapInstance;
+
     let currentMarkers = window.currentMarkers || [];
+
+    // 마커 이미지 정의
+    const markerImage = new kakao.maps.MarkerImage(
+      MarkerIcon,
+      new kakao.maps.Size(28, 28),
+      { offset: new kakao.maps.Point(14, 28) }
+    );
 
     // 기존 마커들 삭제
     currentMarkers.forEach((marker) => {
-      marker.setMap(null);
+      if (marker && marker.setMap) marker.setMap(null);
     });
     currentMarkers = [];
     window.currentMarkers = [];
@@ -152,12 +173,10 @@ const Kakaomap = () => {
     // 렌더링할 항목들 수집
     let itemsToRender = [];
 
-    // 1. 검색 결과 추가
     if (searchResults && searchResults.length > 0) {
       itemsToRender = [...searchResults];
     }
 
-    // 2. 포커스된 토지 추가 (검색 결과에 같은 ID가 없는 경우만)
     if (focusedLand && focusedLand.data) {
       const existsInSearchResults = itemsToRender.some(
         (item) =>
@@ -173,7 +192,7 @@ const Kakaomap = () => {
             lat: focusedLand.data.centerPoint.lat,
             lng: focusedLand.data.centerPoint.lng,
           },
-          isFocused: true, // 포커스된 토지 표시용
+          isFocused: true,
         });
       }
     }
@@ -185,137 +204,143 @@ const Kakaomap = () => {
 
     console.log("마커 렌더링:", itemsToRender.length, "개");
 
-    // 클러스터러 초기화
+    // 클러스터러 초기화 (최초 1회만 생성)
     if (!window.clusterer) {
       window.clusterer = new kakao.maps.MarkerClusterer({
         map: map,
         averageCenter: true,
         minLevel: 1,
-        maxLevel: 6, // 줌 레벨 6 이하에서만 클러스터링
+        maxLevel: 3, // 줌레벨 1~3에서 클러스터링
+        styles: [
+          {
+            width: "40px",
+            height: "40px",
+            background: "#BAF18F",
+            borderRadius: "50%",
+            textAlign: "center",
+            lineHeight: "40px",
+            fontWeight: "bold",
+            fontSize: "14px",
+            boxShadow: "0 0 8px rgba(94,159,0,0.4)",
+          },
+        ],
       });
+
+      // 클러스터 클릭 이벤트 (한 번만 등록)
+      kakao.maps.event.addListener(
+        window.clusterer,
+        "clusterclick",
+        (cluster) => {
+          const newLevel = Math.max(1, map.getLevel() - 2); // 2단계 확대
+          map.setLevel(newLevel, { anchor: cluster.getCenter() });
+        }
+      );
     }
 
-    // 현재 지도 줌 레벨 확인
+    // 클러스터/마커 초기화
+    window.clusterer.clear();
+    currentMarkers.forEach((m) => m.setMap && m.setMap(null));
+    currentMarkers = [];
+
+    // 현재 줌 레벨
     const level = map.getLevel();
 
-    if (level <= 6) {
-      // 줌아웃 상태 → 클러스터 마커만 표시
-      const markers = itemsToRender.map(
-        (item) =>
-          new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(item.point.lat, item.point.lng),
-          })
-      );
+    if (level <= 3) {
+      // 줌레벨 1~3 → 클러스터 모드
+      const markers = itemsToRender.map((item) => {
+        const marker = new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(item.point.lat, item.point.lng),
+          image: markerImage,
+        });
 
-      window.clusterer.clear();
-      window.clusterer.addMarkers(markers);
-    } else {
-      // 줌인 상태 → 개별 CustomOverlay 핀만 표시
-      window.clusterer.clear(); // 클러스터 제거
-      itemsToRender.forEach((item) => {
-        console.log("마커 좌표:", item.point.lat, item.point.lng);
+        // 개별 마커 클릭 이벤트 (상세 패널 열기)
+        kakao.maps.event.addListener(marker, "click", async () => {
+          if (item.type === "LAND") {
+            console.log(`LAND 클릭: ${item.name}, ID: ${item.id}`);
+            await focusOnLand(item.id, { moveMap: false });
 
-        const position = new kakao.maps.LatLng(
-          Number(item.point.lat),
-          Number(item.point.lng)
-        );
+            setLandDetailSidebar({
+              isOpen: true,
+              landId: item.id,
+              openedFromAnalysis: false,
+            });
+          }
+        });
 
-        // DOM 요소를 직접 생성 (custom marker)
-        const overlayElement = document.createElement("div");
-        overlayElement.style.cssText = `
-          position: relative;
-          width: 28px;
-          height: 28px;
-          background: #5E9F00;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        `;
-
-        // 안쪽 흰 점
-        const innerDot = document.createElement("div");
-        innerDot.style.cssText = `
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          background: white;
-          border-radius: 50%;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%) rotate(45deg);
-        `;
-        overlayElement.appendChild(innerDot);
-
-        // 마우스 오버 이벤트 - 폴리곤 표시
-        overlayElement.addEventListener("mouseenter", () => {
-          // 폴리곤 데이터 API 호출 (id와 polygonType 모두 전달)
+        // hover → 폴리곤 표시
+        kakao.maps.event.addListener(marker, "mouseover", () => {
           landService
             .getPolygon(item.id, item.type)
             .then((res) => {
-              console.log("폴리곤 데이터:", res.data);
-              const polygonDataList = res.data.data.polygon; // 이제 List<List<Polygon>> 형태
-
-              // PolygonManager를 사용하여 여러 폴리곤 표시
+              const polygonDataList = res.data.data.polygon;
               showPolygon(polygonDataList, map);
             })
-            .catch((err) => {
-              console.error("폴리곤 로드 실패:", err);
-            });
+            .catch((err) => console.error("폴리곤 로드 실패:", err));
         });
 
-        // 마우스 아웃 이벤트 - 폴리곤 제거
-        overlayElement.addEventListener("mouseleave", () => {
+        kakao.maps.event.addListener(marker, "mouseout", () => {
           hidePolygon();
         });
 
-        // 마커 타입별 클릭 이벤트 추가
-        if (item.type === "GROUP") {
-          overlayElement.addEventListener("click", () => {
-            // 마커 클릭 시 폴리곤 상태 초기화
-            setStateRef.current("idle");
+        return marker;
+      });
 
-            const currentLevel = map.getLevel();
-            const newLevel = Math.max(1, currentLevel - 2); // 줌 레벨 2 올리기 (숫자가 작을수록 확대)
-
-            // 마커 좌표로 지도 중심 이동 및 줌 레벨 변경
-            map.setCenter(position);
-            map.setLevel(newLevel);
-
-            console.log(
-              `GROUP 마커 클릭: ${item.name}, 새 줌 레벨: ${newLevel}`
-            );
-          });
-        } else if (item.type === "LAND") {
-          // LAND 타입 마커 클릭 시 상세 정보 사이드바 표시 (지도 이동 없이)
-          overlayElement.addEventListener("click", async () => {
-            console.log(`LAND 마커 클릭: ${item.name}, ID: ${item.id}`);
-
-            // 포커스 모드는 활성화하되 지도 이동은 하지 않음
-            await focusOnLand(item.id, { moveMap: false });
-          });
-        }
-
-        const customOverlay = new kakao.maps.CustomOverlay({
+      window.clusterer.addMarkers(markers);
+    } else {
+      // 줌레벨 4 이상 → 개별 마커 모드
+      itemsToRender.forEach((item) => {
+        const marker = new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(item.point.lat, item.point.lng),
+          image: markerImage,
           map: map,
-          position: position,
-          content: overlayElement,
-          yAnchor: 1,
         });
 
-        // 새로 생성한 마커를 배열에 추가
-        currentMarkers.push(customOverlay);
-      });
-    }
+        // 클릭 이벤트
+        kakao.maps.event.addListener(marker, "click", async () => {
+          if (item.type === "LAND") {
+            console.log(`LAND 클릭: ${item.name}, ID: ${item.id}`);
+            await focusOnLand(item.id, { moveMap: false });
 
-    window.currentMarkers = currentMarkers;
+            setLandDetailSidebar({
+              isOpen: true,
+              landId: item.id,
+              openedFromAnalysis: false,
+            });
+          } else if (item.type === "GROUP") {
+            console.log(`GROUP 클릭: ${item.name}`);
+            const newLevel = Math.max(1, map.getLevel() - 2);
+            map.setLevel(newLevel, { anchor: marker.getPosition() });
+          }
+        });
+
+        // hover → 폴리곤 표시
+        kakao.maps.event.addListener(marker, "mouseover", () => {
+          landService
+            .getPolygon(item.id, item.type)
+            .then((res) => {
+              const polygonDataList = res.data.data.polygon;
+              showPolygon(polygonDataList, map);
+            })
+            .catch((err) => console.error("폴리곤 로드 실패:", err));
+        });
+
+        kakao.maps.event.addListener(marker, "mouseout", () => {
+          hidePolygon();
+        });
+
+        currentMarkers.push(marker);
+      });
+
+      window.currentMarkers = currentMarkers;
+    }
   }, [
-    hidePolygon, 
-    searchResults, 
-    showPolygon, 
-    showSelectedPolygon, 
-    focusOnLand, 
-    setLandDetailSidebar, 
-    focusedLand
+    hidePolygon,
+    searchResults,
+    showPolygon,
+    showSelectedPolygon,
+    focusOnLand,
+    setLandDetailSidebar,
+    focusedLand,
   ]);
 
   // 사이드바 상태 변경 시 지도 크기 재조정
@@ -345,7 +370,7 @@ const Kakaomap = () => {
           setLandDetailSidebar({
             isOpen: false,
             landId: null,
-            openedFromAnalysis: false
+            openedFromAnalysis: false,
           });
           setFocusedLand(null); // 포커스된 토지도 제거
         }}
