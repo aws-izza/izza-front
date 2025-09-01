@@ -21,76 +21,79 @@ const RangeSlider = ({
   isLoading = false,
   showInputs = true,
 }) => {
+  // 입력 중에는 자유롭게 값 반영
   const handleInputChange = (type, inputValue) => {
     if (!onInputChange) return;
+    onInputChange(type, inputValue);
+  };
 
-    // 입력이 비어있으면 그대로 두기
-    if (inputValue.trim() === "") {
-      onInputChange(type, "");
+  // 입력창에서 포커스 빠져나올 때 (validation 적용)
+  const handleInputBlur = (type, inputValue) => {
+    if (!onInputChange) return;
+
+    const numValue = parseInt(inputValue.replace(/,/g, ""), 10);
+
+    if (isNaN(numValue)) {
+      // 아무것도 입력 안 했으면 최소값으로 설정
+      onInputChange(type, min.toString());
       return;
     }
-    
-    // 숫자로 변환 (콤마 제거)
-    const numValue = parseInt(inputValue.replace(/,/g, ''), 10);
-    if (isNaN(numValue)) return;
-    
-    // validation 적용
+
     let validatedValue = numValue;
-    
-    if (type === 'min') {
-      // 최소값은 전체 범위의 최소값보다 작을 수 없음
-      validatedValue = Math.max(min, numValue);
-      // 최소값은 현재 최대값보다 클 수 없음
-      validatedValue = Math.min(validatedValue, value[1]);
+
+    if (type === "min") {
+      validatedValue = Math.max(min, numValue); // 최소 보정
+      validatedValue = Math.min(validatedValue, value[1]); // 최대값보다 크면 줄임
     } else {
-      // 최대값은 전체 범위의 최대값보다 클 수 없음
-      validatedValue = Math.min(max, numValue);
-      // 최대값은 현재 최소값보다 작을 수 없음
-      validatedValue = Math.max(validatedValue, value[0]);
+      validatedValue = Math.min(max, numValue); // 최대 보정
+      validatedValue = Math.max(validatedValue, value[0]); // 최소값보다 작으면 올림
     }
-    
+
     onInputChange(type, validatedValue.toString());
   };
 
+  // 슬라이더 이동 시
   const handleSliderChange = (values) => {
     if (!onChange) return;
-    
+
     // 슬라이더 값도 validation 적용
     const [minVal, maxVal] = values;
-    
+
     // 범위 내에서만 동작하도록 제한
     const validatedMin = Math.max(min, Math.min(minVal, max));
     const validatedMax = Math.max(min, Math.min(maxVal, max));
-    
+
     // 최소값이 최대값보다 클 수 없도록 보장
     const finalMin = Math.min(validatedMin, validatedMax);
     const finalMax = Math.max(validatedMin, validatedMax);
-    
+
     onChange([finalMin, finalMax]);
   };
 
   return (
     <SliderContainer>
       <SliderLabel>{label}</SliderLabel>
-      
+
       {showInputs && (
         <RangeInputContainer style={{ marginBottom: "16px" }}>
-          <RangeInput 
-            type="text" 
-            value={formatNumber(value[0])}
-            onChange={(e) => handleInputChange('min', e.target.value)}
-            style={{ width: '45%' }}
+          <RangeInput
+            type="text"
+            value={value[0] !== undefined ? formatNumber(value[0]) : ""}
+            onChange={(e) => handleInputChange("min", e.target.value)}
+            onBlur={(e) => handleInputBlur("min", e.target.value)}
+            style={{ width: "45%" }}
           />
           <RangeSeparator>~</RangeSeparator>
-          <RangeInput 
-            type="text" 
-            value={formatNumber(value[1])}
-            onChange={(e) => handleInputChange('max', e.target.value)}
-            style={{ width: '45%' }}
+          <RangeInput
+            type="text"
+            value={value[1] !== undefined ? formatNumber(value[1]) : ""}
+            onChange={(e) => handleInputChange("max", e.target.value)}
+            onBlur={(e) => handleInputBlur("max", e.target.value)}
+            style={{ width: "45%" }}
           />
         </RangeInputContainer>
       )}
-      
+
       <Slider
         range
         min={min}
@@ -102,7 +105,7 @@ const RangeSlider = ({
         styles={{
           track: { backgroundColor: "#4CAF50" },
           handle: { borderColor: "#4CAF50", backgroundColor: "#fff" },
-          rail: { backgroundColor: "#e1e5e9" }
+          rail: { backgroundColor: "#e1e5e9" },
         }}
       />
       <SliderValues>
