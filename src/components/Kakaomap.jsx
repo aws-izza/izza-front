@@ -289,15 +289,90 @@ const Kakaomap = () => {
     } else {
       // 줌레벨 4 이상 → 개별 마커 모드
       itemsToRender.forEach((item) => {
-        const marker = new kakao.maps.Marker({
-          position: new kakao.maps.LatLng(item.point.lat, item.point.lng),
-          image: markerImage,
-          map: map,
-        });
+        if (item.type === "GROUP") {
+          // GROUP 타입은 CustomOverlay로 생성 (두 개 요소로 구성)
+          const overlayElement = document.createElement("div");
+          overlayElement.style.cssText = `
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            border-radius: 20px;
+            overflow: hidden;
+          `;
 
-        // 클릭 이벤트
-        kakao.maps.event.addListener(marker, "click", async () => {
-          if (item.type === "LAND") {
+          // 숫자 부분 (녹색 배경)
+          const countElement = document.createElement("div");
+          countElement.style.cssText = `
+            background: #5e9f00;
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+          `;
+          countElement.textContent = item.count;
+
+          // 지역명 부분 (흰색 배경)
+          const nameElement = document.createElement("div");
+          nameElement.style.cssText = `
+            background: white;
+            color: #333;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+          `;
+          nameElement.textContent = item.name || "마커";
+
+          overlayElement.appendChild(countElement);
+          overlayElement.appendChild(nameElement);
+
+          const position = new kakao.maps.LatLng(item.point.lat, item.point.lng);
+
+          // GROUP 마커 클릭 이벤트
+          overlayElement.addEventListener("click", () => {
+            setStateRef.current("idle");
+            console.log(`GROUP 클릭: ${item.name}`);
+            const newLevel = Math.max(1, map.getLevel() - 2);
+            map.setCenter(position);
+            map.setLevel(newLevel);
+          });
+
+          // 마우스 오버 이벤트
+          overlayElement.addEventListener("mouseenter", () => {
+            landService
+              .getPolygon(item.id, item.type)
+              .then((res) => {
+                const polygonDataList = res.data.data.polygon;
+                showPolygon(polygonDataList, map);
+              })
+              .catch((err) => console.error("폴리곤 로드 실패:", err));
+          });
+
+          overlayElement.addEventListener("mouseleave", () => {
+            hidePolygon();
+          });
+
+          const customOverlay = new kakao.maps.CustomOverlay({
+            map: map,
+            position: position,
+            content: overlayElement,
+            yAnchor: 1,
+          });
+
+          currentMarkers.push(customOverlay);
+        } else if (item.type === "LAND") {
+          // LAND 타입은 Marker로 생성
+          const marker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(item.point.lat, item.point.lng),
+            image: markerImage,
+            map: map,
+          });
+
+          // 클릭 이벤트
+          kakao.maps.event.addListener(marker, "click", async () => {
             console.log(`LAND 클릭: ${item.name}, ID: ${item.id}`);
             await focusOnLand(item.id, { moveMap: false });
 
@@ -306,29 +381,25 @@ const Kakaomap = () => {
               landId: item.id,
               openedFromAnalysis: false,
             });
-          } else if (item.type === "GROUP") {
-            console.log(`GROUP 클릭: ${item.name}`);
-            const newLevel = Math.max(1, map.getLevel() - 2);
-            map.setLevel(newLevel, { anchor: marker.getPosition() });
-          }
-        });
+          });
 
-        // hover → 폴리곤 표시
-        kakao.maps.event.addListener(marker, "mouseover", () => {
-          landService
-            .getPolygon(item.id, item.type)
-            .then((res) => {
-              const polygonDataList = res.data.data.polygon;
-              showPolygon(polygonDataList, map);
-            })
-            .catch((err) => console.error("폴리곤 로드 실패:", err));
-        });
+          // hover → 폴리곤 표시
+          kakao.maps.event.addListener(marker, "mouseover", () => {
+            landService
+              .getPolygon(item.id, item.type)
+              .then((res) => {
+                const polygonDataList = res.data.data.polygon;
+                showPolygon(polygonDataList, map);
+              })
+              .catch((err) => console.error("폴리곤 로드 실패:", err));
+          });
 
-        kakao.maps.event.addListener(marker, "mouseout", () => {
-          hidePolygon();
-        });
+          kakao.maps.event.addListener(marker, "mouseout", () => {
+            hidePolygon();
+          });
 
-        currentMarkers.push(marker);
+          currentMarkers.push(marker);
+        }
       });
 
       window.currentMarkers = currentMarkers;

@@ -77,7 +77,7 @@ export const usePolygonManager = () => {
                 )
             );
 
-            // 폴리곤 생성 (모든 폴리곤을 같은 색상으로 표시)
+            // 폴리곤 생성 (호버 시 빨간색으로 표시)
             const polygon = new window.kakao.maps.Polygon({
               map: map,
               path: polygonPath,
