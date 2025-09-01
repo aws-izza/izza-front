@@ -159,13 +159,102 @@ const AnalysisResults = ({ analysisResults }) => {
     event.stopPropagation(); // Prevent triggering land click
     const landId = result.landId;
     
+    if (!landId || !analysisResults) {
+      console.error('Missing required data for AI report generation');
+      return;
+    }
+
+    // Show loading state
+    event.target.disabled = true;
+    event.target.textContent = '보고서 생성 중...';
+    
     try {
-      // TODO: Implement report generation logic
-      console.log('Generating report for land:', landId);
-      alert('보고서 생성 기능을 구현 예정입니다.');
+      // 토지 상세 정보 가져오기
+      const landDetailResponse = await landService.getLandDetail(landId);
+      if (!landDetailResponse || !landDetailResponse.data) {
+        throw new Error('토지 상세 정보를 가져올 수 없습니다.');
+      }
+      
+      const landDetail = landDetailResponse.data.data;
+      
+      // 분석 결과에서 현재 토지의 데이터 찾기
+      const landScores = analysisResults?.data?.landScores || analysisResults?.landScores || [];
+      const currentLandData = landScores.find(land => land.landId === landId);
+
+      if (!currentLandData) {
+        throw new Error('해당 토지의 분석 데이터를 찾을 수 없습니다.');
+      }
+
+      // analyze_data 구성 (categoryScores에서 각 카테고리의 totalScore 추출)
+      const analyzeData = {
+        "totalScore": Math.round((currentLandData.totalScore || 0) * 100),
+        "입지조건": 0,
+        "인프라": 0,
+        "안정성": 0
+      };
+
+      if (currentLandData.categoryScores) {
+        currentLandData.categoryScores.forEach(category => {
+          if (analyzeData.hasOwnProperty(category.categoryName)) {
+            analyzeData[category.categoryName] = Math.round((category.totalScore || 0) * 100);
+          }
+        });
+      }
+
+      // land_data 구성
+      const landData = {
+        "주소": landDetail.address || "",
+        "지목": landDetail.landCategoryName || "",
+        "용도지역": landDetail.useDistrictName1 || "",
+        "용도지구": landDetail.useDistrictName2 || "지정되지않음",
+        "토지이용상황": landDetail.landUseName || "",
+        "지형고저": landDetail.terrainHeightName || "",
+        "형상": landDetail.terrainShapeName || "",
+        "도로접면": landDetail.roadSideName || "",
+        "공시지가": landDetail.officialLandPrice || 0
+      };
+
+      // API 요청 데이터 구성
+      const requestData = {
+        analyze_data: analyzeData,
+        land_data: landData
+      };
+
+      console.log('현재 토지 분석 데이터:', currentLandData);
+      console.log('AI 보고서 생성 요청 데이터:', requestData);
+
+      // API 호출
+      const response = await fetch('https://report.izza-nopizza.com/api/analyze', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 요청 실패: ${response.status} ${response.statusText}`);
+      }
+
+      const apiResult = await response.json();
+      console.log('AI 보고서 생성 응답:', apiResult);
+
+      // task_id를 사용하여 새 탭에서 로딩 페이지 열기
+      if (apiResult.task_id) {
+        const reportUrl = `https://report.izza-nopizza.com/loading/${apiResult.task_id}`;
+        window.open(reportUrl, '_blank');
+      } else {
+        throw new Error('응답에서 task_id를 찾을 수 없습니다.');
+      }
+
     } catch (error) {
-      console.error('Failed to generate report:', error);
-      alert('보고서 생성에 실패했습니다.');
+      console.error('AI 보고서 생성 실패:', error);
+      alert(`AI 보고서 생성에 실패했습니다: ${error.message}`);
+    } finally {
+      // Reset button state
+      event.target.disabled = false;
+      event.target.textContent = '보고서 생성';
     }
   };
 
