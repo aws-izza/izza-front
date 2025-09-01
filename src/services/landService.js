@@ -18,11 +18,16 @@ export const landService = {
 
   // 기본 정보 API들
   // 토지 면적 범위 조회
-  getLandAreaRange: () => apiClient.get("/api/v1/base-info/land-area-range"),
+  getLandAreaRange: (regionCode = null) => {
+    const params = regionCode ? { regionCode } : {};
+    return apiClient.get("/api/v1/base-info/land-area-range", { params });
+  },
 
   // 공시지가 범위 조회
-  getOfficialLandPriceRange: () =>
-    apiClient.get("/api/v1/base-info/official-land-price-range"),
+  getOfficialLandPriceRange: (regionCode = null) => {
+    const params = regionCode ? { regionCode } : {};
+    return apiClient.get("/api/v1/base-info/official-land-price-range", { params });
+  },
 
   // 용도지역 카테고리 조회
   getUseZoneCategories: () =>
@@ -50,6 +55,10 @@ export const landService = {
   // 주소로 토지 검색
   searchByAddress: (address) =>
     apiClient.get(`/api/v1/land-search/address/${encodeURIComponent(address)}`),
+
+  // 지역별 토지 개수 조회
+  countLandsByFullCode: (params) =>
+    apiClient.get("/api/v1/base-info/lands/count", { params }),
 
   /**
    * 토지 분석 실행

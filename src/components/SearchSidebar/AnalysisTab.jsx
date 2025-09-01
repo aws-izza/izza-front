@@ -33,6 +33,11 @@ import {
 } from './styles';
 
 const AnalysisTab = () => {
+  // 범위 데이터 로딩 상태 (컴포넌트 로컬 상태)
+  const [isLoadingRangeData, setIsLoadingRangeData] = useState(false);
+  // 토지 개수 상태
+  const [landCount, setLandCount] = useState(null);
+  const [isLoadingLandCount, setIsLoadingLandCount] = useState(false);
   
   // Get analysis states from global context
   const { 
@@ -105,6 +110,120 @@ const AnalysisTab = () => {
       ...prev,
       [indicator]: numValue
     }));
+  };
+
+  // 토지 개수 조회 함수
+  const fetchLandCount = async () => {
+    if (!analysisSelectedRegion || !analysisSelectedDistrict) {
+      setLandCount(null);
+      return;
+    }
+
+    try {
+      setIsLoadingLandCount(true);
+      
+      const fullCode = analysisSelectedDistrict;
+      
+      const params = { fullCode };
+      
+      // 용도지역이 선택된 경우에만 추가
+      if (selectedUseZone) {
+        params.useZoneCategory = selectedUseZone;
+      }
+      
+      // 토지면적 범위가 설정된 경우에만 추가
+      if (indicatorRanges.토지면적?.min !== undefined) {
+        params.landAreaMin = indicatorRanges.토지면적.min;
+      }
+      if (indicatorRanges.토지면적?.max !== undefined) {
+        params.landAreaMax = indicatorRanges.토지면적.max;
+      }
+      
+      // 공시지가 범위가 설정된 경우에만 추가
+      if (indicatorRanges.공시지가?.min !== undefined) {
+        params.officialLandPriceMin = indicatorRanges.공시지가.min;
+      }
+      if (indicatorRanges.공시지가?.max !== undefined) {
+        params.officialLandPriceMax = indicatorRanges.공시지가.max;
+      }
+
+      console.log('토지 개수 조회 파라미터:', params);
+
+      const response = await landService.countLandsByFullCode(params);
+      setLandCount(response.data.data);
+
+      console.log('토지 개수 조회 완료:', response.data.data);
+    } catch (error) {
+      console.error('토지 개수 조회 실패:', error);
+      setLandCount(null);
+    } finally {
+      setIsLoadingLandCount(false);
+    }
+  };
+
+  // 시군구 선택 변경 시 토지 개수 조회
+  useEffect(() => {
+    if (analysisSelectedRegion && analysisSelectedDistrict) {
+      fetchLandCount();
+    }
+  }, [analysisSelectedRegion, analysisSelectedDistrict]);
+
+  // 용도지역 변경 시 토지 개수 조회
+  useEffect(() => {
+    if (analysisSelectedRegion && analysisSelectedDistrict) {
+      fetchLandCount();
+    }
+  }, [selectedUseZone]);
+
+  // 토지면적, 공시지가 범위 변경 시 토지 개수 조회
+  useEffect(() => {
+    if (analysisSelectedRegion && analysisSelectedDistrict) {
+      fetchLandCount();
+    }
+  }, [indicatorRanges.토지면적?.min, indicatorRanges.토지면적?.max, indicatorRanges.공시지가?.min, indicatorRanges.공시지가?.max]);
+
+  // step3으로 이동하면서 범위 데이터 로드
+  const handleStep3Navigation = async () => {
+    try {
+      setIsLoadingRangeData(true);
+      
+      console.log('Step3 진입 - 범위 데이터 조회');
+      
+      // 파라미터 없이 기본 범위 데이터 조회
+      const [landAreaResponse, landPriceResponse] = await Promise.all([
+        landService.getLandAreaRange(),
+        landService.getOfficialLandPriceRange(),
+      ]);
+
+      // 새로운 범위 데이터로 슬라이더 값 업데이트
+      const areaRange = landAreaResponse.data.data;
+      const priceRange = landPriceResponse.data.data;
+      
+      setSliderValues({
+        토지면적: [areaRange.min, areaRange.max],
+        공시지가: [priceRange.min, priceRange.max],
+      });
+      
+      setIndicatorRanges({
+        토지면적: { min: areaRange.min, max: areaRange.max },
+        공시지가: { min: priceRange.min, max: priceRange.max },
+      });
+
+      console.log('지역별 범위 데이터 로드 완료:', {
+        landAreaRange: areaRange,
+        landPriceRange: priceRange,
+      });
+      
+      // step3으로 이동
+      setAnalysisStep(3);
+      
+    } catch (error) {
+      console.error('지역별 범위 데이터 로드 실패:', error);
+      // 에러가 발생해도 step3으로 이동은 허용
+      setAnalysisStep(3);
+    } finally {
+      setIsLoadingRangeData(false);
+    }
   };
 
   // 단계별 필수값 검증
@@ -260,6 +379,27 @@ const AnalysisTab = () => {
         />
       </DropdownContainer>
       
+      {/* step1에서도 토지 개수 표시 */}
+      {(analysisSelectedRegion && analysisSelectedDistrict) && (
+        <div style={{ 
+          padding: '12px', 
+          background: 'rgba(0, 0, 0, 0.05)', 
+          borderRadius: '8px', 
+          margin: '16px 0',
+          textAlign: 'center',
+          fontSize: '14px',
+          color: '#333'
+        }}>
+          {landCount !== null ? (
+            <span>
+              <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
+            </span>
+          ) : (
+            '토지 개수를 조회할 수 없습니다'
+          )}
+        </div>
+      )}
+      
       <StyledSearchButton 
         onClick={() => setAnalysisStep(2)}
         disabled={!isStep1Valid()}
@@ -322,6 +462,27 @@ const AnalysisTab = () => {
         ))}
       </CategorySection>
       
+      {/* 토지 개수 표시 */}
+      {(analysisSelectedRegion && analysisSelectedDistrict) && (
+        <div style={{ 
+          padding: '12px', 
+          background: 'rgba(0, 0, 0, 0.05)', 
+          borderRadius: '8px', 
+          margin: '16px 0',
+          textAlign: 'center',
+          fontSize: '14px',
+          color: '#333'
+        }}>
+          {landCount !== null ? (
+            <span>
+              <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
+            </span>
+          ) : (
+            '토지 개수를 조회할 수 없습니다'
+          )}
+        </div>
+      )}
+      
       <div style={{ display: 'flex', gap: '10px' }}>
         <SearchButton 
           onClick={() => setAnalysisStep(1)}
@@ -330,11 +491,11 @@ const AnalysisTab = () => {
           이전
         </SearchButton>
         <StyledSearchButton 
-          onClick={() => setAnalysisStep(3)}
-          disabled={!isStep2Valid()}
+          onClick={handleStep3Navigation}
+          disabled={!isStep2Valid() || isLoadingRangeData}
           variant={isStep2Valid() ? 'success' : ''}
         >
-          다음
+          {isLoadingRangeData ? '로딩 중...' : '다음'}
         </StyledSearchButton>
       </div>
     </>
@@ -443,6 +604,27 @@ const AnalysisTab = () => {
             )
           )}
         </CategorySection>
+      )}
+      
+      {/* step3에서도 토지 개수 표시 */}
+      {(analysisSelectedRegion && analysisSelectedDistrict) && (
+        <div style={{ 
+          padding: '12px', 
+          background: 'rgba(0, 0, 0, 0.05)', 
+          borderRadius: '8px', 
+          margin: '16px 0',
+          textAlign: 'center',
+          fontSize: '14px',
+          color: '#333'
+        }}>
+          {landCount !== null ? (
+            <span>
+              <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
+            </span>
+          ) : (
+            '토지 개수를 조회할 수 없습니다'
+          )}
+        </div>
       )}
       
       {/* Error display */}
