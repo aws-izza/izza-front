@@ -301,35 +301,66 @@ const Kakaomap = () => {
             overflow: hidden;
           `;
 
-          // 숫자 부분 (녹색 배경)
+          // 좌표 먼저 정의
+          const position = new kakao.maps.LatLng(
+            Number(item.point.lat),
+            Number(item.point.lng)
+          );
+
+          // 부모 컨테이너 (알약 전체)
+          const container = document.createElement("div");
+          container.style.cssText = `
+            display: inline-flex;
+            align-items: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            overflow: hidden;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer; /* 클릭 가능한 느낌 */
+          `;
+
+          // 숫자 부분 (초록 박스)
           const countElement = document.createElement("div");
           countElement.style.cssText = `
             background: #5e9f00;
             color: white;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: bold;
-            min-width: 30px;
+            padding: 6px 12px;
             text-align: center;
           `;
           countElement.textContent = item.count;
 
-          // 지역명 부분 (흰색 배경)
+          // 지역명 부분 (흰 박스, 가변 길이)
           const nameElement = document.createElement("div");
           nameElement.style.cssText = `
             background: white;
             color: #333;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: bold;
+            padding: 6px 12px;
             white-space: nowrap;
           `;
-          nameElement.textContent = item.name || "마커";
+          nameElement.textContent = item.name || "지역";
 
-          overlayElement.appendChild(countElement);
-          overlayElement.appendChild(nameElement);
+          // 붙이기
+          container.appendChild(countElement);
+          container.appendChild(nameElement);
 
-          const position = new kakao.maps.LatLng(item.point.lat, item.point.lng);
+          // 클릭 이벤트 → 지도 확대
+          container.addEventListener("click", () => {
+            console.log(`GROUP 클릭: ${item.name}`);
+            const newLevel = Math.max(1, map.getLevel() - 2); // 2단계 확대
+            map.setCenter(
+              new kakao.maps.LatLng(item.point.lat, item.point.lng)
+            );
+            map.setLevel(newLevel);
+          });
+
+          // 지도에 올리기
+          const customOverlay = new kakao.maps.CustomOverlay({
+            map,
+            position: new kakao.maps.LatLng(item.point.lat, item.point.lng),
+            content: container,
+            yAnchor: 1,
+          });
 
           // GROUP 마커 클릭 이벤트
           overlayElement.addEventListener("click", () => {
@@ -353,13 +384,6 @@ const Kakaomap = () => {
 
           overlayElement.addEventListener("mouseleave", () => {
             hidePolygon();
-          });
-
-          const customOverlay = new kakao.maps.CustomOverlay({
-            map: map,
-            position: position,
-            content: overlayElement,
-            yAnchor: 1,
           });
 
           currentMarkers.push(customOverlay);
