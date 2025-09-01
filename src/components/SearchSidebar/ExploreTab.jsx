@@ -153,6 +153,7 @@ const ExploreTab = () => {
           label="토지면적(m²)"
           min={landAreaRange.min}
           max={landAreaRange.max}
+          step={500}
           value={[searchFilters.landAreaMin, searchFilters.landAreaMax]}
           onChange={(values) =>
             updateFilters({
@@ -169,6 +170,7 @@ const ExploreTab = () => {
           label="공시지가(원/m²)"
           min={landPriceRange.min}
           max={landPriceRange.max}
+          step={500000}
           value={[
             searchFilters.officialLandPriceMin,
             searchFilters.officialLandPriceMax,

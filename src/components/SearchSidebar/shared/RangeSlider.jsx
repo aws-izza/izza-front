@@ -13,6 +13,7 @@ const RangeSlider = ({
   label,
   min,
   max,
+  step = 1,
   value,
   onChange,
   onInputChange,
@@ -22,9 +23,16 @@ const RangeSlider = ({
 }) => {
   const handleInputChange = (type, inputValue) => {
     if (!onInputChange) return;
+
+    // 입력이 비어있으면 그대로 두기
+    if (inputValue.trim() === "") {
+      onInputChange(type, "");
+      return;
+    }
     
     // 숫자로 변환 (콤마 제거)
-    const numValue = parseInt(inputValue.replace(/,/g, '')) || 0;
+    const numValue = parseInt(inputValue.replace(/,/g, ''), 10);
+    if (isNaN(numValue)) return;
     
     // validation 적용
     let validatedValue = numValue;
@@ -87,6 +95,7 @@ const RangeSlider = ({
         range
         min={min}
         max={max}
+        step={step || 1}
         value={value}
         onChange={handleSliderChange}
         disabled={isLoading}
