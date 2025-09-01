@@ -197,30 +197,28 @@ const Kakaomap = () => {
       const overlayElement = document.createElement("div");
       overlayElement.style.cssText = `
         position: relative;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         background: #5E9F00;
-        border: 2px solid white;
-        border-radius: 50%;
+        border-radious: 50% 50% 50% 0;
+        transform: rotate(-45deg);
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        cursor: pointer;
       `;
 
-      // 꼬리(삼각형) 추가
-      const tail = document.createElement("div");
-      tail.style.cssText = `
+      // 안쪽 흰 점
+      const innerDot = document.createElement("div");
+      innerDot.style.cssText = `
         position: absolute;
-        bottom: -8px;                 /* 원 아래 붙게 */
+        width: 10px;
+        height: 10px;
+        background: white;
+        border-radius: 50%;
+        top: 50%;
         left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-top: 8px solid ##5E9F00;
+        transform: translate(-50%, -50%) rotate(45deg);
       `;
 
-      overlayElement.appendChild(tail);
+      overlayElement.appendChild(innerDot);
 
       // 마우스 오버 이벤트 - 폴리곤 표시
       overlayElement.addEventListener("mouseenter", () => {
