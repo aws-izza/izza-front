@@ -19,7 +19,7 @@ const ResultsList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 400px;
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
 `;
 
@@ -213,7 +213,7 @@ const AnalysisResults = ({ analysisResults }) => {
 
   return (
     <ResultsContainer>
-      <ResultsTitle>분석 결과 - 상위 {sortedResults.length}개 부지</ResultsTitle>
+      <ResultsTitle>상위 {sortedResults.length}개 부지</ResultsTitle>
       <ResultsList>
         {sortedResults.map((result, index) => (
           <ResultItem
