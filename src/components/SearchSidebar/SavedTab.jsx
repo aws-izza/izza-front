@@ -199,9 +199,9 @@ const SavedTab = () => {
         <EmptyState>
           <EmptyIcon>⭐</EmptyIcon>
           <EmptyMessage>
-            아직 찜한 토지가 없습니다.
+            아직 즐겨찾기한 토지가 없습니다.
             <br />
-            마음에 드는 토지를 찜해보세요!
+            마음에 드는 토지를 즐겨찾기해보세요!
           </EmptyMessage>
         </EmptyState>
       </SavedContainer>
@@ -211,7 +211,7 @@ const SavedTab = () => {
   return (
     <SavedContainer>
       <HeaderSection>
-        <SavedCount>찜한 토지 {favorites.length}개</SavedCount>
+        <SavedCount>즐겨찾기 한 토지 {favorites.length}개</SavedCount>
         <ClearAllButton 
           onClick={handleClearAll}
           disabled={favorites.length === 0}

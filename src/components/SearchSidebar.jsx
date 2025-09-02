@@ -35,7 +35,7 @@ const SearchSidebar = () => {
           분석
         </Tab>
         <Tab active={activeTab === "저장"} onClick={() => setActiveTab("저장")}>
-          저장
+          즐겨찾기
         </Tab>
       </TabContainer>
 

@@ -5,173 +5,18 @@ import { useMapContext } from '../../contexts/MapContext';
 import { useFavorites } from '../../hooks/useFavorites';
 import { usePolygonManager } from '../../hooks/usePolygonManager';
 import { useLandNavigation } from '../../hooks/useLandNavigation';
-import UseZoneDropdown from './shared/UseZoneDropdown';
-import RegionSelector from './shared/RegionSelector';
-import RangeSlider from './shared/RangeSlider';
-import Star from '../Star';
 import { landService } from '../../services/landService';
 import { buildAnalysisRequestPayload } from '../../utils/analysisTransform';
+import AnalysisStep1 from './steps/AnalysisStep1';
+import AnalysisStep2 from './steps/AnalysisStep2';
+import AnalysisStep3 from './steps/AnalysisStep3';
+import AnalysisResults from './steps/AnalysisResults';
+import StarLandModal from './modals/StarLandModal';
 import {
   FilterSection,
   FilterTitle,
-  DropdownContainer,
-  DropdownLabel,
-  SearchButton,
-  CategorySection,
-  CategoryTitle,
-  CheckboxContainer,
-  CheckboxLabel,
-  CheckboxInput,
-  IndicatorRow,
-  IndicatorName,
-  WeightInputContainer,
-  WeightLabel,
-  WeightInput,
-  RequiredLabel,
-  StyledSearchButton,
-  ErrorContainer,
-  ErrorContent,
-  ErrorMessage,
-  ErrorCloseButton,
 } from './styles';
-import styled from 'styled-components';
 
-// Analysis Results styled components
-const ResultsContainer = styled.div`
-  margin-top: 20px;
-`;
-
-const ResultsTitle = styled.h3`
-  color: #333;
-  font-size: 18px;
-  margin-bottom: 20px;
-  font-weight: 600;
-`;
-
-const SectionTitle = styled.h4`
-  color: ${props => props.isStarred ? '#f59e0b' : '#333'};
-  font-size: 16px;
-  margin: 16px 0 12px 0;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  
-  &:first-child {
-    margin-top: 0;
-  }
-`;
-
-const ResultsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 60vh;
-  overflow-y: auto;
-`;
-
-const ResultItem = styled.div`
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px;
-  border-left: 4px solid #5e9f00;
-  transition: all 0.2s ease;
-  position: relative;
-
-  &:hover {
-    background: #e8f5e8;
-    transform: translateX(2px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
-  }
-
-  &.highlighted {
-    background: #e3f2fd;
-    border-left-color: #2196f3;
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-  }
-`;
-
-const StarBadge = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 1;
-`;
-
-const ResultItemContent = styled.div`
-  cursor: pointer;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-`;
-
-const ActionButton = styled.button`
-  flex: 1;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &.view-button {
-    background: #60bd68;
-    color: white;
-
-    &:hover {
-      background: #57ab5e;
-    }
-  }
-
-  &.report-button {
-    background: #3a96ff;
-    color: white;
-
-    &:hover {
-      background: #3484df;
-    }
-
-    &:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
-    }
-  }
-`;
-
-const ResultRank = styled.div`
-  display: inline-block;
-  background: ${props => props.starred ? '#f59e0b' : '#5e9f00'};
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 2px 8px;
-  border-radius: 12px;
-  margin-right: 8px;
-`;
-
-const ResultScore = styled.div`
-  font-size: 18px;
-  font-weight: bold;
-  color: #518800;
-  margin: 4px 0;
-`;
-
-const ResultAddress = styled.div`
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 8px;
-`;
-
-const NoResultsMessage = styled.div`
-  text-align: center;
-  color: #666;
-  font-size: 14px;
-  padding: 20px;
-`;
 
 const AnalysisTab = () => {
   // 범위 데이터 로딩 상태 (컴포넌트 로컬 상태)
@@ -639,873 +484,153 @@ const AnalysisTab = () => {
     }
   };
 
-  const renderStep1 = () => (
-    <>
-      <DropdownContainer>
-        <DropdownLabel>지역 선택<RequiredLabel>*</RequiredLabel></DropdownLabel>
-        <RegionSelector
-          regions={regions}
-          districts={districts}
-          selectedRegion={analysisSelectedRegion}
-          selectedDistrict={analysisSelectedDistrict}
-          onRegionChange={handleAnalysisRegionChange}
-          onDistrictChange={handleAnalysisDistrictChange}
-          isLoading={isLoading}
-          isLoadingDistricts={isLoadingDistricts}
-        />
-      </DropdownContainer>
-      
-      <DropdownContainer>
-        <DropdownLabel>용도지역<RequiredLabel>*</RequiredLabel></DropdownLabel>
-        <UseZoneDropdown
-          value={selectedUseZone}
-          onChange={(e) => setSelectedUseZone(e.target.value)}
-          useZoneCategories={useZoneCategories}
-          isLoading={isLoading}
-          showLabel={false}
-        />
-      </DropdownContainer>
-      
-      {/* 찜 토지 불러오기 버튼 */}
-      <div style={{ margin: '16px 0' }}>
-        <SearchButton
-          onClick={() => setShowStarModal(true)}
-          style={{
-            width: '100%',
-            background: '#f59e0b',
-            color: 'white',
-            border: 'none',
-            marginBottom: '8px'
-          }}
-        >
-          ⭐ 찜 토지 목록에서 선택 ({favorites.length}개)
-        </SearchButton>
-        {selectedStarLands.length > 0 && (
-          <div style={{
-            padding: '8px',
-            background: '#fef3cd',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#856404'
-          }}>
-            선택된 즐격찾기 토지: {selectedStarLands.length}개
-          </div>
-        )}
-      </div>
-
-      {/* step1에서도 토지 개수 표시 */}
-      {(analysisSelectedRegion && analysisSelectedDistrict) && (
-        <div style={{ 
-          padding: '12px', 
-          background: 'rgba(0, 0, 0, 0.05)', 
-          borderRadius: '8px', 
-          margin: '16px 0',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: '#333'
-        }}>
-          {landCount !== null ? (
-            <span>
-              <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
-            </span>
-          ) : (
-            '토지 개수를 조회할 수 없습니다'
-          )}
-        </div>
-      )}
-      
-      <StyledSearchButton 
-        onClick={() => setAnalysisStep(2)}
-        disabled={!isStep1Valid()}
-        variant={isStep1Valid() ? 'success' : ''}
-      >
-        다음
-      </StyledSearchButton>
-    </>
-  );
-
-  const renderStep2 = () => (
-    <>
-      <FilterTitle>
-        비교 기준 선택<RequiredLabel>*</RequiredLabel>
-      </FilterTitle>
-
-      <CategorySection>
-        <CategoryTitle>입지조건</CategoryTitle>
-        {["토지면적", "공시지가", "전기요금"].map((indicator) => (
-          <CheckboxContainer key={indicator}>
-            <CheckboxLabel>
-              <CheckboxInput
-                type="checkbox"
-                checked={selectedIndicators[indicator]}
-                onChange={(e) =>
-                  handleIndicatorChange(indicator, e.target.checked)
-                }
-              />
-              {indicator}
-            </CheckboxLabel>
-          </CheckboxContainer>
-        ))}
-      </CategorySection>
-
-      <CategorySection>
-        <CategoryTitle>인프라</CategoryTitle>
-        {["송전탑", "인구밀도"].map((indicator) => (
-          <CheckboxContainer key={indicator}>
-            <CheckboxLabel>
-              <CheckboxInput
-                type="checkbox"
-                checked={selectedIndicators[indicator]}
-                onChange={(e) =>
-                  handleIndicatorChange(indicator, e.target.checked)
-                }
-              />
-              {indicator}
-            </CheckboxLabel>
-          </CheckboxContainer>
-        ))}
-      </CategorySection>
-
-      <CategorySection>
-        <CategoryTitle>안정성</CategoryTitle>
-        {["변전소", "전기선", "연간재난문자"].map((indicator) => (
-          <CheckboxContainer key={indicator}>
-            <CheckboxLabel>
-              <CheckboxInput
-                type="checkbox"
-                checked={selectedIndicators[indicator]}
-                onChange={(e) =>
-                  handleIndicatorChange(indicator, e.target.checked)
-                }
-              />
-              {indicator}
-            </CheckboxLabel>
-          </CheckboxContainer>
-        ))}
-      </CategorySection>
-
-      {/* 토지 개수 표시 */}
-      {analysisSelectedRegion && analysisSelectedDistrict && (
-        <div
-          style={{
-            padding: "12px",
-            background: "rgba(0, 0, 0, 0.05)",
-            borderRadius: "8px",
-            margin: "16px 0",
-            textAlign: "center",
-            fontSize: "14px",
-            color: "#333",
-          }}
-        >
-          {landCount !== null ? (
-            <span>
-              <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
-            </span>
-          ) : (
-            "토지 개수를 조회할 수 없습니다"
-          )}
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: "10px" }}>
-        <SearchButton
-          onClick={() => setAnalysisStep(1)}
-          style={{
-            background: "#FFFFFF",
-            color: "#5E9F00",
-            border: "1px solid #5E9F00",
-          }}
-        >
-          이전
-        </SearchButton>
-        <StyledSearchButton
-          onClick={handleStep3Navigation}
-          disabled={!isStep2Valid() || isLoadingRangeData}
-          variant={isStep2Valid() ? "success" : ""}
-        >
-          {isLoadingRangeData ? "로딩 중..." : "다음"}
-        </StyledSearchButton>
-      </div>
-    </>
-  );
-
-  const renderStep3 = () => (
-    <>
-      <FilterTitle>
-        기준 값 및 가중치 설정<RequiredLabel>*</RequiredLabel>
-      </FilterTitle>
-
-      {/* 입지조건 - 범위 선택 가능 */}
-      {Object.keys(selectedIndicators).filter(
-        (key) =>
-          selectedIndicators[key] &&
-          ["토지면적", "공시지가", "전기요금"].includes(key)
-      ).length > 0 && (
-        <CategorySection>
-          <CategoryTitle>입지조건</CategoryTitle>
-          {["토지면적", "공시지가", "전기요금"].map(
-            (indicator) =>
-              selectedIndicators[indicator] && (
-                <div key={indicator}>
-                  <IndicatorRow>
-                    <IndicatorName>{indicator}</IndicatorName>
-                    <WeightInputContainer>
-                      <WeightLabel>
-                        가중치<RequiredLabel>*</RequiredLabel>:
-                      </WeightLabel>
-                      <WeightInput
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={indicatorWeights[indicator]}
-                        onChange={(e) =>
-                          handleWeightChange(indicator, e.target.value)
-                        }
-                        onFocus={(e) => e.target.select()}
-                        placeholder="1-100"
-                      />
-                      <WeightLabel>%</WeightLabel>
-                    </WeightInputContainer>
-                  </IndicatorRow>
-
-                  {(indicator === "토지면적" || indicator === "공시지가") && (
-                    <RangeSlider
-                      label=""
-                      min={
-                        indicator === "토지면적"
-                          ? landAreaRange.min
-                          : landPriceRange.min
-                      }
-                      max={
-                        indicator === "토지면적"
-                          ? landAreaRange.max
-                          : landPriceRange.max
-                      }
-                      value={sliderValues[indicator] || [0, 1000]}
-                      onChange={(values) =>
-                        handleSliderChange(indicator, values)
-                      }
-                      onInputChange={(type, value) =>
-                        handleRangeInputChange(indicator, type, value)
-                      }
-                      formatNumber={formatNumber}
-                      isLoading={isLoading}
-                      showInputs={true}
-                    />
-                  )}
-                </div>
-              )
-          )}
-        </CategorySection>
-      )}
-
-      {/* 인프라 - 가중치만 선택 가능 */}
-      {Object.keys(selectedIndicators).filter(
-        (key) => selectedIndicators[key] && ["송전탑", "인구밀도"].includes(key)
-      ).length > 0 && (
-        <CategorySection>
-          <CategoryTitle>인프라</CategoryTitle>
-          {["송전탑", "인구밀도"].map(
-            (indicator) =>
-              selectedIndicators[indicator] && (
-                <IndicatorRow key={indicator}>
-                  <IndicatorName>{indicator}</IndicatorName>
-                  <WeightInputContainer>
-                    <WeightLabel>가중치:</WeightLabel>
-                    <WeightInput
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={indicatorWeights[indicator]}
-                      onChange={(e) =>
-                        handleWeightChange(indicator, e.target.value)
-                      }
-                      onFocus={(e) => e.target.select()}
-                    />
-                    <WeightLabel>%</WeightLabel>
-                  </WeightInputContainer>
-                </IndicatorRow>
-              )
-          )}
-        </CategorySection>
-      )}
-
-      {/* 안정성 - 가중치만 선택 가능 */}
-      {Object.keys(selectedIndicators).filter(
-        (key) =>
-          selectedIndicators[key] &&
-          ["변전소", "전기선", "연간재난문자"].includes(key)
-      ).length > 0 && (
-        <CategorySection>
-          <CategoryTitle>안정성</CategoryTitle>
-          {["변전소", "전기선", "연간재난문자"].map(
-            (indicator) =>
-              selectedIndicators[indicator] && (
-                <IndicatorRow key={indicator}>
-                  <IndicatorName>{indicator}</IndicatorName>
-                  <WeightInputContainer>
-                    <WeightLabel>가중치:</WeightLabel>
-                    <WeightInput
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={indicatorWeights[indicator]}
-                      onChange={(e) =>
-                        handleWeightChange(indicator, e.target.value)
-                      }
-                      onFocus={(e) => e.target.select()}
-                    />
-                    <WeightLabel>%</WeightLabel>
-                  </WeightInputContainer>
-                </IndicatorRow>
-              )
-          )}
-        </CategorySection>
-      )}
-
-      {/* step3에서도 토지 개수 표시 */}
-      {analysisSelectedRegion && analysisSelectedDistrict && (
-        <div
-          style={{
-            padding: "12px",
-            background: "rgba(0, 0, 0, 0.05)",
-            borderRadius: "8px",
-            margin: "16px 0",
-            textAlign: "center",
-            fontSize: "14px",
-            color: "#333",
-          }}
-        >
-          {landCount !== null ? (
-            <span>
-              <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
-            </span>
-          ) : (
-            "토지 개수를 조회할 수 없습니다"
-          )}
-        </div>
-      )}
-
-      {/* Error display */}
-      {analysisError && (
-        <ErrorContainer>
-          <ErrorContent>
-            <ErrorMessage>{analysisError}</ErrorMessage>
-            <ErrorCloseButton
-              onClick={() => setAnalysisError(null)}
-              title="오류 메시지 닫기"
-            >
-              ×
-            </ErrorCloseButton>
-          </ErrorContent>
-        </ErrorContainer>
-      )}
-
-      <div style={{ display: "flex", gap: "10px" }}>
-        <SearchButton
-          onClick={() => setAnalysisStep(2)}
-          style={{
-            background: "#FFFFFF",
-            color: "#5E9F00",
-            border: "1px solid #5E9F00"
-          }}
-        >
-          이전
-        </SearchButton>
-        <StyledSearchButton
-          onClick={handleAnalysisExecution}
-          disabled={!isStep3Valid() || isAnalyzing}
-          variant={isStep3Valid() ? "success" : ""}
-        >
-          {isAnalyzing ? "분석 중..." : "분석 실행"}
-        </StyledSearchButton>
-      </div>
-    </>
-  );
-
-  // 찜 토지 선택 모달 렌더링
-  const renderStarModal = () => {
-    const formatPrice = (price) => {
-      if (!price) return "-";
-      return new Intl.NumberFormat("ko-KR").format(price) + "원";
-    };
-
-    const formatArea = (area) => {
-      if (!area) return "-";
-      const pyeong = Math.round(area * 0.3025);
-      return `${new Intl.NumberFormat("ko-KR").format(area)}㎡ (${pyeong.toLocaleString()}평)`;
-    };
-
-    const handleStarLandToggle = (landId) => {
-      setSelectedStarLands(prev => {
-        if (prev.includes(landId)) {
-          return prev.filter(id => id !== landId);
-        } else {
-          return [...prev, landId];
-        }
-      });
-    };
-
-    const handleSelectAll = () => {
-      if (selectedStarLands.length === favorites.length) {
-        setSelectedStarLands([]);
+  // 찜 토지 모달 핸들러
+  const handleStarLandToggle = (landId) => {
+    setSelectedStarLands(prev => {
+      if (prev.includes(landId)) {
+        return prev.filter(id => id !== landId);
       } else {
-        setSelectedStarLands(favorites.map(fav => fav.id));
+        return [...prev, landId];
       }
-    };
-
-    const handleApplySelection = () => {
-      setShowStarModal(false);
-    };
-
-    return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          width: '600px',
-          maxWidth: '90vw',
-          maxHeight: '80vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-        }}>
-          {/* 모달 헤더 */}
-          <div style={{
-            padding: '20px',
-            borderBottom: '1px solid #e5e7eb',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
-              찜 토지 목록 ({favorites.length}개)
-            </h3>
-            <button
-              onClick={() => setShowStarModal(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: '#6b7280'
-              }}
-            >
-              ×
-            </button>
-          </div>
-
-          {/* 전체 선택 */}
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #f3f4f6',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={selectedStarLands.length === favorites.length && favorites.length > 0}
-                onChange={handleSelectAll}
-                style={{ marginRight: '8px' }}
-              />
-              전체 선택
-            </label>
-            <span style={{ fontSize: '14px', color: '#6b7280' }}>
-              {selectedStarLands.length}개 선택됨
-            </span>
-          </div>
-
-          {/* 토지 목록 */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '0 20px'
-          }}>
-            {favorites.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                color: '#6b7280'
-              }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>⭐</div>
-                <p style={{ margin: 0 }}>찜한 토지가 없습니다.</p>
-              </div>
-            ) : (
-              favorites.map((favorite) => (
-                <div
-                  key={favorite.id}
-                  style={{
-                    padding: '16px 0',
-                    borderBottom: '1px solid #f3f4f6',
-                    display: 'flex',
-                    alignItems: 'flex-start'
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedStarLands.includes(favorite.id)}
-                    onChange={() => handleStarLandToggle(favorite.id)}
-                    style={{ marginRight: '12px', marginTop: '4px' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{
-                      margin: '0 0 8px 0',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#1f2937'
-                    }}>
-                      {favorite.address}
-                    </h4>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '12px',
-                      fontSize: '12px'
-                    }}>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>면적: </span>
-                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
-                          {formatArea(favorite.landArea)}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>공시지가: </span>
-                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
-                          {formatPrice(favorite.officialLandPrice)}/㎡
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>용도지역: </span>
-                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
-                          {favorite.useDistrictName1}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>지목: </span>
-                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
-                          {favorite.landCategoryName}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* 모달 푸터 */}
-          <div style={{
-            padding: '20px',
-            borderTop: '1px solid #e5e7eb',
-            display: 'flex',
-            gap: '10px',
-            justifyContent: 'flex-end'
-          }}>
-            <SearchButton
-              onClick={() => setShowStarModal(false)}
-              style={{
-                background: '#FFFFFF',
-                color: '#6b7280',
-                border: '1px solid #d1d5db'
-              }}
-            >
-              취소
-            </SearchButton>
-            <StyledSearchButton
-              onClick={handleApplySelection}
-              variant="success"
-            >
-              선택 완료 ({selectedStarLands.length}개)
-            </StyledSearchButton>
-          </div>
-        </div>
-      </div>
-    );
+    });
   };
 
-  const renderResults = () => {
-    // 분석 결과 데이터 처리
-    const starredLands = analysisResults?.data?.starredLands || analysisResults?.starredLands || [];
-    const topRankedLands = analysisResults?.data?.topRankedLands || analysisResults?.topRankedLands || [];
-
-    if (!analysisResults || (starredLands.length === 0 && topRankedLands.length === 0)) {
-      return (
-        <>
-          <FilterTitle>분석 결과</FilterTitle>
-          <ResultsContainer>
-            <NoResultsMessage>
-              분석 결과가 없습니다.
-            </NoResultsMessage>
-          </ResultsContainer>
-          <StyledSearchButton 
-            onClick={() => {
-              setShowAnalysisResults(false);
-              setAnalysisStep(1);
-              setAnalysisResults(null);
-              setAnalysisSelectedRegion('');
-              setAnalysisSelectedDistrict('');
-              setSelectedUseZone('');
-              setSelectedIndicators({
-                토지면적: false,
-                공시지가: false,
-                전기요금: false,
-                송전탑: false,
-                인구밀도: false,
-                변전소: false,
-                전기선: false,
-                연간재난문자: false,
-              });
-              setIndicatorWeights({
-                토지면적: 80,
-                공시지가: 80,
-                전기요금: 80,
-                송전탑: 80,
-                인구밀도: 80,
-                변전소: 80,
-                전기선: 80,
-                연간재난문자: 80,
-              });
-              setIndicatorRanges({});
-              setSliderValues({});
-              setIsAnalyzing(false);
-              setAnalysisError(null);
-              setSelectedStarLands([]);
-            }}
-            style={{ marginTop: '20px' }}
-          >
-            새 분석 시작
-          </StyledSearchButton>
-        </>
-      );
+  const handleSelectAll = () => {
+    if (selectedStarLands.length === favorites.length) {
+      setSelectedStarLands([]);
+    } else {
+      setSelectedStarLands(favorites.map(fav => fav.id));
     }
-
-    return (
-      <>
-        <FilterTitle>분석 결과</FilterTitle>
-        <ResultsContainer>
-          <ResultsList>
-            {/* 찜 토지 결과 */}
-            {starredLands.length > 0 && (
-              <>
-                <SectionTitle>
-                  즐겨찾기 토지 분석 결과 ({starredLands.length}개)
-                </SectionTitle>
-                {starredLands.map((result, index) => (
-                  <ResultItem
-                    key={`starred-${result.landId || index}`}
-                    onMouseEnter={() => handleLandHover(result.landId)}
-                    onMouseLeave={handleLandLeave}
-                    style={{
-                      background: '#fefce8',
-                      borderLeft: '4px solid #f59e0b',
-                      border: '2px solid #fbbf24'
-                    }}
-                  >
-                    <StarBadge>
-                      <Star active={true} width={20} height={20} />
-                    </StarBadge>
-                    <ResultItemContent
-                      onClick={() => handleLandClick(result)}
-                      title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
-                    >
-                      <div>
-                        <ResultRank starred={true}>
-                          {result.rank || (index + 1)}위
-                        </ResultRank>
-                        <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
-                      </div>
-
-                      <ResultAddress>
-                        {result.address || '주소 정보 없음'}
-                      </ResultAddress>
-
-                      {/* Display category scores if available */}
-                      {result.categoryScores && result.categoryScores.length > 0 && (
-                        <div style={{ marginTop: '8px', fontSize: '11px', color: '#888' }}>
-                          {result.categoryScores.map((category, idx) => (
-                            <span key={idx} style={{ marginRight: '8px' }}>
-                              {category.categoryName}: {formatScore(category.totalScore)}점
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </ResultItemContent>
-                    
-                    <ButtonContainer>
-                      <ActionButton 
-                        className="view-button"
-                        onClick={() => handleLandClick(result)}
-                        title="상세 정보 보기"
-                        style={{
-                          background: '#f59e0b',
-                          color: 'white'
-                        }}
-                      >
-                        상세 보기
-                      </ActionButton>
-                      <ActionButton 
-                        className="report-button"
-                        onClick={(e) => handleReportGeneration(result, e)}
-                        title="AI 보고서 생성"
-                      >
-                        보고서 생성
-                      </ActionButton>
-                    </ButtonContainer>
-                  </ResultItem>
-                ))}
-              </>
-            )}
-            
-            {/* 상위 20개 토지 결과 */}
-            {topRankedLands.length > 0 && (
-              <>
-                <SectionTitle isStarred={false}>
-                  상위 {topRankedLands.length}개 부지
-                </SectionTitle>
-                {topRankedLands.map((result, index) => (
-                  <ResultItem
-                    key={`top-${result.landId || index}`}
-                    onMouseEnter={() => handleLandHover(result.landId)}
-                    onMouseLeave={handleLandLeave}
-                    style={{
-                      background: result.starred ? '#fefce8' : '#f8f9fa',
-                      borderLeft: result.starred ? '4px solid #f59e0b' : '4px solid #5e9f00',
-                      border: result.starred ? '2px solid #fbbf24' : 'none'
-                    }}
-                  >
-                    {result.starred && (
-                      <StarBadge>
-                        <Star active={true} width={20} height={20} />
-                      </StarBadge>
-                    )}
-                    <ResultItemContent
-                      onClick={() => handleLandClick(result)}
-                      title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
-                    >
-                      <div>
-                        <ResultRank starred={result.starred}>
-                          {result.rank || (index + 1)}위
-                        </ResultRank>
-                        <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
-                      </div>
-
-                      <ResultAddress>
-                        {result.address || '주소 정보 없음'}
-                      </ResultAddress>
-
-                      {/* Display category scores if available */}
-                      {result.categoryScores && result.categoryScores.length > 0 && (
-                        <div style={{ marginTop: '8px', fontSize: '11px', color: '#888' }}>
-                          {result.categoryScores.map((category, idx) => (
-                            <span key={idx} style={{ marginRight: '8px' }}>
-                              {category.categoryName}: {formatScore(category.totalScore)}점
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </ResultItemContent>
-                    
-                    <ButtonContainer>
-                      <ActionButton 
-                        className="view-button"
-                        onClick={() => handleLandClick(result)}
-                        title="상세 정보 보기"
-                        style={result.starred ? {
-                          background: '#f59e0b',
-                          color: 'white'
-                        } : {}}
-                      >
-                        상세 보기
-                      </ActionButton>
-                      <ActionButton 
-                        className="report-button"
-                        onClick={(e) => handleReportGeneration(result, e)}
-                        title="AI 보고서 생성"
-                      >
-                        보고서 생성
-                      </ActionButton>
-                    </ButtonContainer>
-                  </ResultItem>
-                ))}
-              </>
-            )}
-          </ResultsList>
-        </ResultsContainer>
-        <StyledSearchButton 
-          onClick={() => {
-            // 분석 결과 상태 초기화
-            setShowAnalysisResults(false);
-            setAnalysisStep(1);
-            setAnalysisResults(null);
-            
-            // 분석 폼 상태 초기화
-            setAnalysisSelectedRegion('');
-            setAnalysisSelectedDistrict('');
-            setSelectedUseZone('');
-            setSelectedIndicators({
-              토지면적: false,
-              공시지가: false,
-              전기요금: false,
-              송전탑: false,
-              인구밀도: false,
-              변전소: false,
-              전기선: false,
-              연간재난문자: false,
-            });
-            setIndicatorWeights({
-              토지면적: 80,
-              공시지가: 80,
-              전기요금: 80,
-              송전탑: 80,
-              인구밀도: 80,
-              변전소: 80,
-              전기선: 80,
-              연간재난문자: 80,
-            });
-            setIndicatorRanges({});
-            setSliderValues({});
-            setIsAnalyzing(false);
-            setAnalysisError(null);
-            setSelectedStarLands([]);
-          }}
-          style={{ marginTop: '20px' }}
-        >
-          새 분석 시작
-        </StyledSearchButton>
-      </>
-    );
   };
+
+  const handleApplySelection = () => {
+    setShowStarModal(false);
+  };
+
+
+
+  // 새 분석 시작 핸들러
+  const handleNewAnalysis = () => {
+    // 분석 결과 상태 초기화
+    setShowAnalysisResults(false);
+    setAnalysisStep(1);
+    setAnalysisResults(null);
+    
+    // 분석 폼 상태 초기화
+    setAnalysisSelectedRegion('');
+    setAnalysisSelectedDistrict('');
+    setSelectedUseZone('');
+    setSelectedIndicators({
+      토지면적: false,
+      공시지가: false,
+      전기요금: false,
+      송전탑: false,
+      인구밀도: false,
+      변전소: false,
+      전기선: false,
+      연간재난문자: false,
+    });
+    setIndicatorWeights({
+      토지면적: 80,
+      공시지가: 80,
+      전기요금: 80,
+      송전탑: 80,
+      인구밀도: 80,
+      변전소: 80,
+      전기선: 80,
+      연간재난문자: 80,
+    });
+    setIndicatorRanges({});
+    setSliderValues({});
+    setIsAnalyzing(false);
+    setAnalysisError(null);
+    setSelectedStarLands([]);
+  };
+
 
   return (
     <>
       <FilterSection>
         {showAnalysisResults ? (
-          renderResults()
+          <AnalysisResults
+            analysisResults={analysisResults}
+            onLandClick={handleLandClick}
+            onLandHover={handleLandHover}
+            onLandLeave={handleLandLeave}
+            onReportGeneration={handleReportGeneration}
+            onNewAnalysis={handleNewAnalysis}
+            formatScore={formatScore}
+          />
         ) : (
           <>
             <FilterTitle>분석 단계 {analysisStep}/3</FilterTitle>
-            {analysisStep === 1 && renderStep1()}
-            {analysisStep === 2 && renderStep2()}
-            {analysisStep === 3 && renderStep3()}
+            {analysisStep === 1 && (
+              <AnalysisStep1
+                regions={regions}
+                districts={districts}
+                analysisSelectedRegion={analysisSelectedRegion}
+                analysisSelectedDistrict={analysisSelectedDistrict}
+                selectedUseZone={selectedUseZone}
+                useZoneCategories={useZoneCategories}
+                isLoading={isLoading}
+                isLoadingDistricts={isLoadingDistricts}
+                landCount={landCount}
+                selectedStarLands={selectedStarLands}
+                onRegionChange={handleAnalysisRegionChange}
+                onDistrictChange={handleAnalysisDistrictChange}
+                onUseZoneChange={(e) => setSelectedUseZone(e.target.value)}
+                onShowStarModal={() => setShowStarModal(true)}
+                onNext={() => setAnalysisStep(2)}
+                isValid={isStep1Valid()}
+              />
+            )}
+            {analysisStep === 2 && (
+              <AnalysisStep2
+                selectedIndicators={selectedIndicators}
+                landCount={landCount}
+                isLoadingRangeData={isLoadingRangeData}
+                onIndicatorChange={handleIndicatorChange}
+                onPrevious={() => setAnalysisStep(1)}
+                onNext={handleStep3Navigation}
+                isValid={isStep2Valid()}
+              />
+            )}
+            {analysisStep === 3 && (
+              <AnalysisStep3
+                selectedIndicators={selectedIndicators}
+                indicatorWeights={indicatorWeights}
+                landAreaRange={landAreaRange}
+                landPriceRange={landPriceRange}
+                sliderValues={sliderValues}
+                landCount={landCount}
+                analysisError={analysisError}
+                isAnalyzing={isAnalyzing}
+                isLoading={isLoading}
+                onWeightChange={handleWeightChange}
+                onSliderChange={handleSliderChange}
+                onRangeInputChange={handleRangeInputChange}
+                onPrevious={() => setAnalysisStep(2)}
+                onExecute={handleAnalysisExecution}
+                onErrorClose={() => setAnalysisError(null)}
+                formatNumber={formatNumber}
+                isValid={isStep3Valid()}
+              />
+            )}
           </>
         )}
       </FilterSection>
       
       {/* 찜 토지 선택 모달 */}
-      {showStarModal && renderStarModal()}
+      {showStarModal && (
+        <StarLandModal
+          favorites={favorites}
+          selectedStarLands={selectedStarLands}
+          onClose={() => setShowStarModal(false)}
+          onToggleStarLand={handleStarLandToggle}
+          onSelectAll={handleSelectAll}
+          onApplySelection={handleApplySelection}
+        />
+      )}
     </>
   );
 };
