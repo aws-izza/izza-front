@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLandData } from '../../hooks/useLandData';
 import { useRegionData } from '../../hooks/useRegionData';
 import { useMapContext } from '../../contexts/MapContext';
+import { useFavorites } from '../../hooks/useFavorites';
 import UseZoneDropdown from './shared/UseZoneDropdown';
 import RegionSelector from './shared/RegionSelector';
 import RangeSlider from './shared/RangeSlider';
@@ -39,6 +40,10 @@ const AnalysisTab = () => {
   const [landCount, setLandCount] = useState(null);
   const [isLoadingLandCount, setIsLoadingLandCount] = useState(false);
   
+  // 찜 목록 모달 상태
+  const [showStarModal, setShowStarModal] = useState(false);
+  const [selectedStarLands, setSelectedStarLands] = useState([]);
+  
   // Get analysis states from global context
   const { 
     analysisStep, setAnalysisStep,
@@ -64,6 +69,9 @@ const AnalysisTab = () => {
     handleRegionChange,
     handleDistrictChange,
   } = useRegionData();
+  
+  // 찜 토지 목록 훅
+  const { favorites } = useFavorites();
 
   // Analysis-specific region handlers
   const handleAnalysisRegionChange = (event) => {
@@ -261,7 +269,8 @@ const AnalysisTab = () => {
         selectedIndicators,
         indicatorWeights,
         indicatorRanges,
-        industryType: 'MANUFACTURING' // Default as specified in requirements
+        industryType: 'MANUFACTURING', // Default as specified in requirements
+        starLandIds: selectedStarLands
       });
       
       // Log request payload for debugging as specified in task 9
@@ -379,6 +388,33 @@ const AnalysisTab = () => {
         />
       </DropdownContainer>
       
+      {/* 찜 토지 불러오기 버튼 */}
+      <div style={{ margin: '16px 0' }}>
+        <SearchButton
+          onClick={() => setShowStarModal(true)}
+          style={{
+            width: '100%',
+            background: '#f59e0b',
+            color: 'white',
+            border: 'none',
+            marginBottom: '8px'
+          }}
+        >
+          ⭐ 찜 토지 목록에서 선택 ({favorites.length}개)
+        </SearchButton>
+        {selectedStarLands.length > 0 && (
+          <div style={{
+            padding: '8px',
+            background: '#fef3cd',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#856404'
+          }}>
+            선택된 찜 토지: {selectedStarLands.length}개
+          </div>
+        )}
+      </div>
+
       {/* step1에서도 토지 개수 표시 */}
       {(analysisSelectedRegion && analysisSelectedDistrict) && (
         <div style={{ 
@@ -709,6 +745,219 @@ const AnalysisTab = () => {
     </>
   );
 
+  // 찜 토지 선택 모달 렌더링
+  const renderStarModal = () => {
+    const formatPrice = (price) => {
+      if (!price) return "-";
+      return new Intl.NumberFormat("ko-KR").format(price) + "원";
+    };
+
+    const formatArea = (area) => {
+      if (!area) return "-";
+      const pyeong = Math.round(area * 0.3025);
+      return `${new Intl.NumberFormat("ko-KR").format(area)}㎡ (${pyeong.toLocaleString()}평)`;
+    };
+
+    const handleStarLandToggle = (landId) => {
+      setSelectedStarLands(prev => {
+        if (prev.includes(landId)) {
+          return prev.filter(id => id !== landId);
+        } else {
+          return [...prev, landId];
+        }
+      });
+    };
+
+    const handleSelectAll = () => {
+      if (selectedStarLands.length === favorites.length) {
+        setSelectedStarLands([]);
+      } else {
+        setSelectedStarLands(favorites.map(fav => fav.id));
+      }
+    };
+
+    const handleApplySelection = () => {
+      setShowStarModal(false);
+    };
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          width: '600px',
+          maxWidth: '90vw',
+          maxHeight: '80vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+        }}>
+          {/* 모달 헤더 */}
+          <div style={{
+            padding: '20px',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
+              찜 토지 목록 ({favorites.length}개)
+            </h3>
+            <button
+              onClick={() => setShowStarModal(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#6b7280'
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          {/* 전체 선택 */}
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #f3f4f6',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={selectedStarLands.length === favorites.length && favorites.length > 0}
+                onChange={handleSelectAll}
+                style={{ marginRight: '8px' }}
+              />
+              전체 선택
+            </label>
+            <span style={{ fontSize: '14px', color: '#6b7280' }}>
+              {selectedStarLands.length}개 선택됨
+            </span>
+          </div>
+
+          {/* 토지 목록 */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '0 20px'
+          }}>
+            {favorites.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '60px 20px',
+                color: '#6b7280'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>⭐</div>
+                <p style={{ margin: 0 }}>찜한 토지가 없습니다.</p>
+              </div>
+            ) : (
+              favorites.map((favorite) => (
+                <div
+                  key={favorite.id}
+                  style={{
+                    padding: '16px 0',
+                    borderBottom: '1px solid #f3f4f6',
+                    display: 'flex',
+                    alignItems: 'flex-start'
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedStarLands.includes(favorite.id)}
+                    onChange={() => handleStarLandToggle(favorite.id)}
+                    style={{ marginRight: '12px', marginTop: '4px' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{
+                      margin: '0 0 8px 0',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#1f2937'
+                    }}>
+                      {favorite.address}
+                    </h4>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '12px',
+                      fontSize: '12px'
+                    }}>
+                      <div>
+                        <span style={{ color: '#6b7280' }}>면적: </span>
+                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
+                          {formatArea(favorite.landArea)}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#6b7280' }}>공시지가: </span>
+                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
+                          {formatPrice(favorite.officialLandPrice)}/㎡
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#6b7280' }}>용도지역: </span>
+                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
+                          {favorite.useDistrictName1}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#6b7280' }}>지목: </span>
+                        <span style={{ color: '#1f2937', fontWeight: '600' }}>
+                          {favorite.landCategoryName}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* 모달 푸터 */}
+          <div style={{
+            padding: '20px',
+            borderTop: '1px solid #e5e7eb',
+            display: 'flex',
+            gap: '10px',
+            justifyContent: 'flex-end'
+          }}>
+            <SearchButton
+              onClick={() => setShowStarModal(false)}
+              style={{
+                background: '#FFFFFF',
+                color: '#6b7280',
+                border: '1px solid #d1d5db'
+              }}
+            >
+              취소
+            </SearchButton>
+            <StyledSearchButton
+              onClick={handleApplySelection}
+              variant="success"
+            >
+              선택 완료 ({selectedStarLands.length}개)
+            </StyledSearchButton>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderResults = () => (
     <>
       <FilterTitle>분석 결과</FilterTitle>
@@ -748,6 +997,7 @@ const AnalysisTab = () => {
           setSliderValues({});
           setIsAnalyzing(false);
           setAnalysisError(null);
+          setSelectedStarLands([]);
         }}
         style={{ marginTop: '20px' }}
       >
@@ -757,18 +1007,23 @@ const AnalysisTab = () => {
   );
 
   return (
-    <FilterSection>
-      {showAnalysisResults ? (
-        renderResults()
-      ) : (
-        <>
-          <FilterTitle>분석 단계 {analysisStep}/3</FilterTitle>
-          {analysisStep === 1 && renderStep1()}
-          {analysisStep === 2 && renderStep2()}
-          {analysisStep === 3 && renderStep3()}
-        </>
-      )}
-    </FilterSection>
+    <>
+      <FilterSection>
+        {showAnalysisResults ? (
+          renderResults()
+        ) : (
+          <>
+            <FilterTitle>분석 단계 {analysisStep}/3</FilterTitle>
+            {analysisStep === 1 && renderStep1()}
+            {analysisStep === 2 && renderStep2()}
+            {analysisStep === 3 && renderStep3()}
+          </>
+        )}
+      </FilterSection>
+      
+      {/* 찜 토지 선택 모달 */}
+      {showStarModal && renderStarModal()}
+    </>
   );
 };
 

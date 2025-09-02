@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { usePolygonManager } from '../../hooks/usePolygonManager';
 import { useLandNavigation } from '../../hooks/useLandNavigation';
 import { landService } from '../../services/landService';
+import Star from '../Star';
 
 const ResultsContainer = styled.div`
   margin-top: 20px;
@@ -13,6 +14,20 @@ const ResultsTitle = styled.h3`
   font-size: 18px;
   margin-bottom: 20px;
   font-weight: 600;
+`;
+
+const SectionTitle = styled.h4`
+  color: ${props => props.isStarred ? '#f59e0b' : '#333'};
+  font-size: 16px;
+  margin: 16px 0 12px 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:first-child {
+    margin-top: 0;
+  }
 `;
 
 const ResultsList = styled.div`
@@ -29,6 +44,7 @@ const ResultItem = styled.div`
   padding: 12px;
   border-left: 4px solid #5e9f00;
   transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     background: #e8f5e8;
@@ -41,6 +57,13 @@ const ResultItem = styled.div`
     border-left-color: #2196f3;
     box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
   }
+`;
+
+const StarBadge = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
 `;
 
 const ResultItemContent = styled.div`
@@ -89,7 +112,7 @@ const ActionButton = styled.button`
 
 const ResultRank = styled.div`
   display: inline-block;
-  background: #5e9f00;
+  background: ${props => props.starred ? '#f59e0b' : '#5e9f00'};
   color: white;
   font-size: 12px;
   font-weight: bold;
@@ -97,6 +120,7 @@ const ResultRank = styled.div`
   border-radius: 12px;
   margin-right: 8px;
 `;
+
 
 const ResultScore = styled.div`
   font-size: 18px;
@@ -139,8 +163,9 @@ const AnalysisResults = ({ analysisResults }) => {
   const { navigateToLand } = useLandNavigation();
   const { showPolygon, hidePolygon } = usePolygonManager();
 
-  // Handle various response structures
-  const landScores = analysisResults?.data?.landScores || analysisResults?.landScores || [];
+  // Handle new response structure with starredLands and topRankedLands
+  const starredLands = analysisResults?.data?.starredLands || analysisResults?.starredLands || [];
+  const topRankedLands = analysisResults?.data?.topRankedLands || analysisResults?.topRankedLands || [];
 
   // Handle land item click - use the reusable navigation function
   const handleLandClick = async (result) => {
@@ -177,9 +202,9 @@ const AnalysisResults = ({ analysisResults }) => {
       
       const landDetail = landDetailResponse.data.data;
       
-      // 분석 결과에서 현재 토지의 데이터 찾기
-      const landScores = analysisResults?.data?.landScores || analysisResults?.landScores || [];
-      const currentLandData = landScores.find(land => land.landId === landId);
+      // 분석 결과에서 현재 토지의 데이터 찾기 (starredLands와 topRankedLands에서 모두 검색)
+      const allLands = [...starredLands, ...topRankedLands];
+      const currentLandData = allLands.find(land => land.landId === landId);
 
       if (!currentLandData) {
         throw new Error('해당 토지의 분석 데이터를 찾을 수 없습니다.');
@@ -276,7 +301,7 @@ const AnalysisResults = ({ analysisResults }) => {
     hidePolygon();
   };
 
-  if (!analysisResults || landScores.length === 0) {
+  if (!analysisResults || (starredLands.length === 0 && topRankedLands.length === 0)) {
     return (
       <ResultsContainer>
         <ResultsTitle>분석 결과</ResultsTitle>
@@ -286,11 +311,6 @@ const AnalysisResults = ({ analysisResults }) => {
       </ResultsContainer>
     );
   }
-
-  // Sort by totalScore in descending order and take top 10
-  const sortedResults = [...landScores]
-    .sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
-    .slice(0, 10);
 
   const formatNumber = (num) => {
     return num ? num.toLocaleString() : '0';
@@ -302,57 +322,154 @@ const AnalysisResults = ({ analysisResults }) => {
 
   return (
     <ResultsContainer>
-      <ResultsTitle>상위 {sortedResults.length}개 부지</ResultsTitle>
+      <ResultsTitle>분석 결과</ResultsTitle>
       <ResultsList>
-        {sortedResults.map((result, index) => (
-          <ResultItem
-            key={result.landId || index}
-            onMouseEnter={() => handleLandHover(result.landId)}
-            onMouseLeave={handleLandLeave}
-          >
-            <ResultItemContent
-              onClick={() => handleLandClick(result)}
-              title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
-            >
-              <div>
-                <ResultRank>{index + 1}위</ResultRank>
-                <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
-              </div>
-
-              <ResultAddress>
-                {result.address || '주소 정보 없음'}
-              </ResultAddress>
-
-              {/* Display category scores if available */}
-              {result.categoryScores && result.categoryScores.length > 0 && (
-                <div style={{ marginTop: '8px', fontSize: '11px', color: '#888' }}>
-                  {result.categoryScores.map((category, idx) => (
-                    <span key={idx} style={{ marginRight: '8px' }}>
-                      {category.categoryName}: {formatScore(category.totalScore)}점
-                    </span>
-                  ))}
-                </div>
-              )}
-            </ResultItemContent>
-            
-            <ButtonContainer>
-              <ActionButton 
-                className="view-button"
-                onClick={() => handleLandClick(result)}
-                title="상세 정보 보기"
+        {/* 찜 토지 결과 */}
+        {starredLands.length > 0 && (
+          <>
+            <SectionTitle isStarred={true}>
+              <span>⭐</span>
+              찜 토지 분석 결과 ({starredLands.length}개)
+            </SectionTitle>
+            {starredLands.map((result, index) => (
+              <ResultItem
+                key={`starred-${result.landId || index}`}
+                onMouseEnter={() => handleLandHover(result.landId)}
+                onMouseLeave={handleLandLeave}
+                style={{
+                  background: '#fefce8',
+                  borderLeft: '4px solid #f59e0b',
+                  border: '2px solid #fbbf24'
+                }}
               >
-                상세 보기
-              </ActionButton>
-              <ActionButton 
-                className="report-button"
-                onClick={(e) => handleReportGeneration(result, e)}
-                title="AI 보고서 생성"
+                <StarBadge>
+                  <Star active={true} width={20} height={20} />
+                </StarBadge>
+                <ResultItemContent
+                  onClick={() => handleLandClick(result)}
+                  title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
+                >
+                  <div>
+                    <ResultRank starred={true}>
+                      {result.rank || (index + 1)}위
+                    </ResultRank>
+                    <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
+                  </div>
+
+                  <ResultAddress>
+                    {result.address || '주소 정보 없음'}
+                  </ResultAddress>
+
+                  {/* Display category scores if available */}
+                  {result.categoryScores && result.categoryScores.length > 0 && (
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#888' }}>
+                      {result.categoryScores.map((category, idx) => (
+                        <span key={idx} style={{ marginRight: '8px' }}>
+                          {category.categoryName}: {formatScore(category.totalScore)}점
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </ResultItemContent>
+                
+                <ButtonContainer>
+                  <ActionButton 
+                    className="view-button"
+                    onClick={() => handleLandClick(result)}
+                    title="상세 정보 보기"
+                    style={{
+                      background: '#f59e0b',
+                      color: 'white'
+                    }}
+                  >
+                    상세 보기
+                  </ActionButton>
+                  <ActionButton 
+                    className="report-button"
+                    onClick={(e) => handleReportGeneration(result, e)}
+                    title="AI 보고서 생성"
+                  >
+                    보고서 생성
+                  </ActionButton>
+                </ButtonContainer>
+              </ResultItem>
+            ))}
+          </>
+        )}
+        
+        {/* 상위 20개 토지 결과 */}
+        {topRankedLands.length > 0 && (
+          <>
+            <SectionTitle isStarred={false}>
+              상위 {topRankedLands.length}개 부지
+            </SectionTitle>
+            {topRankedLands.map((result, index) => (
+              <ResultItem
+                key={`top-${result.landId || index}`}
+                onMouseEnter={() => handleLandHover(result.landId)}
+                onMouseLeave={handleLandLeave}
+                style={{
+                  background: result.starred ? '#fefce8' : '#f8f9fa',
+                  borderLeft: result.starred ? '4px solid #f59e0b' : '4px solid #5e9f00',
+                  border: result.starred ? '2px solid #fbbf24' : 'none'
+                }}
               >
-                보고서 생성
-              </ActionButton>
-            </ButtonContainer>
-          </ResultItem>
-        ))}
+                {result.starred && (
+                  <StarBadge>
+                    <Star active={true} width={20} height={20} />
+                  </StarBadge>
+                )}
+                <ResultItemContent
+                  onClick={() => handleLandClick(result)}
+                  title="클릭하면 지도에서 해당 토지로 이동하고 상세 정보를 확인할 수 있습니다"
+                >
+                  <div>
+                    <ResultRank starred={result.starred}>
+                      {result.rank || (index + 1)}위
+                    </ResultRank>
+                    <ResultScore>{formatScore(result.totalScore)}점</ResultScore>
+                  </div>
+
+                  <ResultAddress>
+                    {result.address || '주소 정보 없음'}
+                  </ResultAddress>
+
+                  {/* Display category scores if available */}
+                  {result.categoryScores && result.categoryScores.length > 0 && (
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: '#888' }}>
+                      {result.categoryScores.map((category, idx) => (
+                        <span key={idx} style={{ marginRight: '8px' }}>
+                          {category.categoryName}: {formatScore(category.totalScore)}점
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </ResultItemContent>
+                
+                <ButtonContainer>
+                  <ActionButton 
+                    className="view-button"
+                    onClick={() => handleLandClick(result)}
+                    title="상세 정보 보기"
+                    style={result.starred ? {
+                      background: '#f59e0b',
+                      color: 'white'
+                    } : {}}
+                  >
+                    상세 보기
+                  </ActionButton>
+                  <ActionButton 
+                    className="report-button"
+                    onClick={(e) => handleReportGeneration(result, e)}
+                    title="AI 보고서 생성"
+                  >
+                    보고서 생성
+                  </ActionButton>
+                </ButtonContainer>
+              </ResultItem>
+            ))}
+          </>
+        )}
       </ResultsList>
     </ResultsContainer>
   );

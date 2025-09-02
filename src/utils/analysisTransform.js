@@ -100,6 +100,7 @@ export const buildIndicatorRange = (indicator, isSelected, indicatorRanges, indi
  * @param {Object} params.indicatorWeights - Object mapping indicator names to weight values
  * @param {Object} params.indicatorRanges - Object mapping indicator names to range objects
  * @param {string} [params.industryType='MANUFACTURING'] - Industry type (defaults to MANUFACTURING)
+ * @param {Array<string>} [params.starLandIds] - Optional array of starred land IDs
  * @returns {Object} Complete request payload for API
  */
 export const buildAnalysisRequestPayload = ({
@@ -109,7 +110,8 @@ export const buildAnalysisRequestPayload = ({
   selectedIndicators,
   indicatorWeights,
   indicatorRanges,
-  industryType = 'MANUFACTURING'
+  industryType = 'MANUFACTURING',
+  starLandIds = []
 }) => {
   // Validate required parameters
   if (!selectedRegion || !selectedDistrict || !selectedUseZone) {
@@ -130,7 +132,8 @@ export const buildAnalysisRequestPayload = ({
   const payload = {
     fullCode: getFullCode(selectedDistrict),
     industryType,
-    targetUseDistrictCodes: getTargetUseDistrictCodes(selectedUseZone)
+    targetUseDistrictCodes: getTargetUseDistrictCodes(selectedUseZone),
+    starLandIds: Array.isArray(starLandIds) ? starLandIds : []
   };
   
   // Add indicator ranges (null for unselected indicators)
