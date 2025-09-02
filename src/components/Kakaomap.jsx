@@ -133,6 +133,9 @@ const Kakaomap = () => {
           searchPointsRef.current(boundsData);
         });
         mapEventListeners.push(idleListener);
+
+        // 초기 진입 시 강제로 idle 이벤트 실행
+        kakao.maps.event.trigger(map, "idle");
       })
       .catch((error) => {
         console.error("카카오 맵 로드 실패:", error);
