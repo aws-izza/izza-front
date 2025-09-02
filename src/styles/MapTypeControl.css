@@ -1,0 +1,41 @@
+.map-type-control {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  display: flex;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.map-type-btn {
+  background: white;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s ease;
+  border-right: 1px solid #e0e0e0;
+}
+
+.map-type-btn:last-child {
+  border-right: none;
+}
+
+.map-type-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.map-type-btn.active {
+  background: #5e9f00;
+  color: white;
+}
+
+.map-type-btn.active:hover {
+  background: #4a7f00;
+}

@@ -4,6 +4,7 @@ import { useMapContext } from "../contexts/MapContext";
 import { useMapSearch } from "../hooks/useMapSearch";
 import { usePolygonManager } from "../hooks/usePolygonManager";
 import LandDetailSidebar from "./LandDetailSidebar";
+import MapTypeControl from "./MapTypeControl";
 import MarkerIcon from "../images/Marker.svg";
 
 /* global kakao */
@@ -457,8 +458,11 @@ const Kakaomap = () => {
           height: "100vh",
           transition: "margin-right 0.3s ease-in-out",
           marginRight: landDetailSidebar.isOpen ? "400px" : "0",
+          position: "relative",
         }}
-      ></div>
+      >
+        <MapTypeControl />
+      </div>
       <LandDetailSidebar
         isOpen={landDetailSidebar.isOpen}
         onClose={() => {

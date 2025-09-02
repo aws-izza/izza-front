@@ -254,12 +254,6 @@ const LandDetailSidebar = ({ isOpen, onClose, landId }) => {
                       </span>
                     </div>
                     <div className="info-row">
-                      <span className="label">용도지역2</span>
-                      <span className="value">
-                        {landDetail.useDistrictName2}
-                      </span>
-                    </div>
-                    <div className="info-row">
                       <span className="label">지형높이</span>
                       <span className="value">
                         {landDetail.terrainHeightName}
