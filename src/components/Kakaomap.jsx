@@ -460,7 +460,6 @@ const Kakaomap = () => {
           width: "100%",
           height: "100vh",
           transition: "margin-right 0.3s ease-in-out",
-          marginRight: landDetailSidebar.isOpen ? "400px" : "0",
           position: "relative",
         }}
       >
