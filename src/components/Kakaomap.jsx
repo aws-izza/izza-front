@@ -76,8 +76,8 @@ const Kakaomap = () => {
 
         const container = document.getElementById("map");
         const options = {
-          center: new kakao.maps.LatLng(37.481519493, 126.882630605), // 가산디지털단지역
-          level: 3,
+          center: new kakao.maps.LatLng(36.5, 127.8),
+          level: 12,
         };
 
         const map = new kakao.maps.Map(container, options);
