@@ -19,7 +19,7 @@ const ResultsList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 70vh;
+  max-height: 60vh;
   overflow-y: auto;
 `;
 
@@ -64,11 +64,11 @@ const ActionButton = styled.button`
   transition: all 0.2s ease;
 
   &.view-button {
-    background: #62c76a;
+    background: #60bd68;
     color: white;
 
     &:hover {
-      background: #5ab562;
+      background: #57ab5e;
     }
   }
 
