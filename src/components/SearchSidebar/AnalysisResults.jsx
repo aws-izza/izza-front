@@ -19,7 +19,7 @@ const ResultsList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100vh - 250px);
+  max-height: 70vh;
   overflow-y: auto;
 `;
 
@@ -27,7 +27,7 @@ const ResultItem = styled.div`
   background: #f8f9fa;
   border-radius: 8px;
   padding: 12px;
-  border-left: 4px solid #4caf50;
+  border-left: 4px solid #5e9f00;
   transition: all 0.2s ease;
 
   &:hover {
@@ -62,24 +62,24 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &.view-button {
-    background: #3b82f6;
+    background: #62c76a;
     color: white;
-    
+
     &:hover {
-      background: #2563eb;
+      background: #5ab562;
     }
   }
-  
+
   &.report-button {
-    background: #10b981;
+    background: #3a96ff;
     color: white;
-    
+
     &:hover {
-      background: #059669;
+      background: #3484df;
     }
-    
+
     &:disabled {
       background: #9ca3af;
       cursor: not-allowed;
@@ -89,7 +89,7 @@ const ActionButton = styled.button`
 
 const ResultRank = styled.div`
   display: inline-block;
-  background: #4caf50;
+  background: #5e9f00;
   color: white;
   font-size: 12px;
   font-weight: bold;
@@ -101,7 +101,7 @@ const ResultRank = styled.div`
 const ResultScore = styled.div`
   font-size: 18px;
   font-weight: bold;
-  color: #2e7d32;
+  color: #518800;
   margin: 4px 0;
 `;
 

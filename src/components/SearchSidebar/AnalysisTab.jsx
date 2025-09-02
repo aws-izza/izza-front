@@ -412,17 +412,21 @@ const AnalysisTab = () => {
 
   const renderStep2 = () => (
     <>
-      <FilterTitle>비교 기준 선택<RequiredLabel>*</RequiredLabel></FilterTitle>
-      
+      <FilterTitle>
+        비교 기준 선택<RequiredLabel>*</RequiredLabel>
+      </FilterTitle>
+
       <CategorySection>
         <CategoryTitle>입지조건</CategoryTitle>
-        {['토지면적', '공시지가', '전기요금'].map((indicator) => (
+        {["토지면적", "공시지가", "전기요금"].map((indicator) => (
           <CheckboxContainer key={indicator}>
             <CheckboxLabel>
               <CheckboxInput
                 type="checkbox"
                 checked={selectedIndicators[indicator]}
-                onChange={(e) => handleIndicatorChange(indicator, e.target.checked)}
+                onChange={(e) =>
+                  handleIndicatorChange(indicator, e.target.checked)
+                }
               />
               {indicator}
             </CheckboxLabel>
@@ -432,13 +436,15 @@ const AnalysisTab = () => {
 
       <CategorySection>
         <CategoryTitle>인프라</CategoryTitle>
-        {['송전탑', '인구밀도'].map((indicator) => (
+        {["송전탑", "인구밀도"].map((indicator) => (
           <CheckboxContainer key={indicator}>
             <CheckboxLabel>
               <CheckboxInput
                 type="checkbox"
                 checked={selectedIndicators[indicator]}
-                onChange={(e) => handleIndicatorChange(indicator, e.target.checked)}
+                onChange={(e) =>
+                  handleIndicatorChange(indicator, e.target.checked)
+                }
               />
               {indicator}
             </CheckboxLabel>
@@ -448,54 +454,62 @@ const AnalysisTab = () => {
 
       <CategorySection>
         <CategoryTitle>안정성</CategoryTitle>
-        {['변전소', '전기선', '연간재난문자'].map((indicator) => (
+        {["변전소", "전기선", "연간재난문자"].map((indicator) => (
           <CheckboxContainer key={indicator}>
             <CheckboxLabel>
               <CheckboxInput
                 type="checkbox"
                 checked={selectedIndicators[indicator]}
-                onChange={(e) => handleIndicatorChange(indicator, e.target.checked)}
+                onChange={(e) =>
+                  handleIndicatorChange(indicator, e.target.checked)
+                }
               />
               {indicator}
             </CheckboxLabel>
           </CheckboxContainer>
         ))}
       </CategorySection>
-      
+
       {/* 토지 개수 표시 */}
-      {(analysisSelectedRegion && analysisSelectedDistrict) && (
-        <div style={{ 
-          padding: '12px', 
-          background: 'rgba(0, 0, 0, 0.05)', 
-          borderRadius: '8px', 
-          margin: '16px 0',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: '#333'
-        }}>
+      {analysisSelectedRegion && analysisSelectedDistrict && (
+        <div
+          style={{
+            padding: "12px",
+            background: "rgba(0, 0, 0, 0.05)",
+            borderRadius: "8px",
+            margin: "16px 0",
+            textAlign: "center",
+            fontSize: "14px",
+            color: "#333",
+          }}
+        >
           {landCount !== null ? (
             <span>
               <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
             </span>
           ) : (
-            '토지 개수를 조회할 수 없습니다'
+            "토지 개수를 조회할 수 없습니다"
           )}
         </div>
       )}
-      
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <SearchButton 
+
+      <div style={{ display: "flex", gap: "10px" }}>
+        <SearchButton
           onClick={() => setAnalysisStep(1)}
-          style={{ background: 'rgba(0, 0, 0, 0.2)' }}
+          style={{
+            background: "#FFFFFF",
+            color: "#5E9F00",
+            border: "1px solid #5E9F00",
+          }}
         >
           이전
         </SearchButton>
-        <StyledSearchButton 
+        <StyledSearchButton
           onClick={handleStep3Navigation}
           disabled={!isStep2Valid() || isLoadingRangeData}
-          variant={isStep2Valid() ? 'success' : ''}
+          variant={isStep2Valid() ? "success" : ""}
         >
-          {isLoadingRangeData ? '로딩 중...' : '다음'}
+          {isLoadingRangeData ? "로딩 중..." : "다음"}
         </StyledSearchButton>
       </div>
     </>
@@ -503,136 +517,167 @@ const AnalysisTab = () => {
 
   const renderStep3 = () => (
     <>
-      <FilterTitle>기준 값 및 가중치 설정<RequiredLabel>*</RequiredLabel></FilterTitle>
-      
+      <FilterTitle>
+        기준 값 및 가중치 설정<RequiredLabel>*</RequiredLabel>
+      </FilterTitle>
+
       {/* 입지조건 - 범위 선택 가능 */}
-      {Object.keys(selectedIndicators).filter(key => 
-        selectedIndicators[key] && ['토지면적', '공시지가', '전기요금'].includes(key)
+      {Object.keys(selectedIndicators).filter(
+        (key) =>
+          selectedIndicators[key] &&
+          ["토지면적", "공시지가", "전기요금"].includes(key)
       ).length > 0 && (
         <CategorySection>
           <CategoryTitle>입지조건</CategoryTitle>
-          {['토지면적', '공시지가', '전기요금'].map((indicator) => 
-            selectedIndicators[indicator] && (
-              <div key={indicator}>
-                <IndicatorRow>
-                  <IndicatorName>{indicator}</IndicatorName>
-                  <WeightInputContainer>
-                    <WeightLabel>가중치<RequiredLabel>*</RequiredLabel>:</WeightLabel>
-                    <WeightInput
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={indicatorWeights[indicator]}
-                      onChange={(e) => handleWeightChange(indicator, e.target.value)}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="1-100"
+          {["토지면적", "공시지가", "전기요금"].map(
+            (indicator) =>
+              selectedIndicators[indicator] && (
+                <div key={indicator}>
+                  <IndicatorRow>
+                    <IndicatorName>{indicator}</IndicatorName>
+                    <WeightInputContainer>
+                      <WeightLabel>
+                        가중치<RequiredLabel>*</RequiredLabel>:
+                      </WeightLabel>
+                      <WeightInput
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={indicatorWeights[indicator]}
+                        onChange={(e) =>
+                          handleWeightChange(indicator, e.target.value)
+                        }
+                        onFocus={(e) => e.target.select()}
+                        placeholder="1-100"
+                      />
+                      <WeightLabel>%</WeightLabel>
+                    </WeightInputContainer>
+                  </IndicatorRow>
+
+                  {(indicator === "토지면적" || indicator === "공시지가") && (
+                    <RangeSlider
+                      label=""
+                      min={
+                        indicator === "토지면적"
+                          ? landAreaRange.min
+                          : landPriceRange.min
+                      }
+                      max={
+                        indicator === "토지면적"
+                          ? landAreaRange.max
+                          : landPriceRange.max
+                      }
+                      value={sliderValues[indicator] || [0, 1000]}
+                      onChange={(values) =>
+                        handleSliderChange(indicator, values)
+                      }
+                      onInputChange={(type, value) =>
+                        handleRangeInputChange(indicator, type, value)
+                      }
+                      formatNumber={formatNumber}
+                      isLoading={isLoading}
+                      showInputs={true}
                     />
-                    <WeightLabel>%</WeightLabel>
-                  </WeightInputContainer>
-                </IndicatorRow>
-                
-                {(indicator === '토지면적' || indicator === '공시지가') && (
-                  <RangeSlider
-                    label=""
-                    min={indicator === '토지면적' ? landAreaRange.min : landPriceRange.min}
-                    max={indicator === '토지면적' ? landAreaRange.max : landPriceRange.max}
-                    value={sliderValues[indicator] || [0, 1000]}
-                    onChange={(values) => handleSliderChange(indicator, values)}
-                    onInputChange={(type, value) => handleRangeInputChange(indicator, type, value)}
-                    formatNumber={formatNumber}
-                    isLoading={isLoading}
-                    showInputs={true}
-                  />
-                )}
-              </div>
-            )
+                  )}
+                </div>
+              )
           )}
         </CategorySection>
       )}
 
       {/* 인프라 - 가중치만 선택 가능 */}
-      {Object.keys(selectedIndicators).filter(key => 
-        selectedIndicators[key] && ['송전탑', '인구밀도'].includes(key)
+      {Object.keys(selectedIndicators).filter(
+        (key) => selectedIndicators[key] && ["송전탑", "인구밀도"].includes(key)
       ).length > 0 && (
         <CategorySection>
           <CategoryTitle>인프라</CategoryTitle>
-          {['송전탑', '인구밀도'].map((indicator) => 
-            selectedIndicators[indicator] && (
-              <IndicatorRow key={indicator}>
-                <IndicatorName>{indicator}</IndicatorName>
-                <WeightInputContainer>
-                  <WeightLabel>가중치:</WeightLabel>
-                  <WeightInput
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={indicatorWeights[indicator]}
-                    onChange={(e) => handleWeightChange(indicator, e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                  />
-                  <WeightLabel>%</WeightLabel>
-                </WeightInputContainer>
-              </IndicatorRow>
-            )
+          {["송전탑", "인구밀도"].map(
+            (indicator) =>
+              selectedIndicators[indicator] && (
+                <IndicatorRow key={indicator}>
+                  <IndicatorName>{indicator}</IndicatorName>
+                  <WeightInputContainer>
+                    <WeightLabel>가중치:</WeightLabel>
+                    <WeightInput
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={indicatorWeights[indicator]}
+                      onChange={(e) =>
+                        handleWeightChange(indicator, e.target.value)
+                      }
+                      onFocus={(e) => e.target.select()}
+                    />
+                    <WeightLabel>%</WeightLabel>
+                  </WeightInputContainer>
+                </IndicatorRow>
+              )
           )}
         </CategorySection>
       )}
 
       {/* 안정성 - 가중치만 선택 가능 */}
-      {Object.keys(selectedIndicators).filter(key => 
-        selectedIndicators[key] && ['변전소', '전기선', '연간재난문자'].includes(key)
+      {Object.keys(selectedIndicators).filter(
+        (key) =>
+          selectedIndicators[key] &&
+          ["변전소", "전기선", "연간재난문자"].includes(key)
       ).length > 0 && (
         <CategorySection>
           <CategoryTitle>안정성</CategoryTitle>
-          {['변전소', '전기선', '연간재난문자'].map((indicator) => 
-            selectedIndicators[indicator] && (
-              <IndicatorRow key={indicator}>
-                <IndicatorName>{indicator}</IndicatorName>
-                <WeightInputContainer>
-                  <WeightLabel>가중치:</WeightLabel>
-                  <WeightInput
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={indicatorWeights[indicator]}
-                    onChange={(e) => handleWeightChange(indicator, e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                  />
-                  <WeightLabel>%</WeightLabel>
-                </WeightInputContainer>
-              </IndicatorRow>
-            )
+          {["변전소", "전기선", "연간재난문자"].map(
+            (indicator) =>
+              selectedIndicators[indicator] && (
+                <IndicatorRow key={indicator}>
+                  <IndicatorName>{indicator}</IndicatorName>
+                  <WeightInputContainer>
+                    <WeightLabel>가중치:</WeightLabel>
+                    <WeightInput
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={indicatorWeights[indicator]}
+                      onChange={(e) =>
+                        handleWeightChange(indicator, e.target.value)
+                      }
+                      onFocus={(e) => e.target.select()}
+                    />
+                    <WeightLabel>%</WeightLabel>
+                  </WeightInputContainer>
+                </IndicatorRow>
+              )
           )}
         </CategorySection>
       )}
-      
+
       {/* step3에서도 토지 개수 표시 */}
-      {(analysisSelectedRegion && analysisSelectedDistrict) && (
-        <div style={{ 
-          padding: '12px', 
-          background: 'rgba(0, 0, 0, 0.05)', 
-          borderRadius: '8px', 
-          margin: '16px 0',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: '#333'
-        }}>
+      {analysisSelectedRegion && analysisSelectedDistrict && (
+        <div
+          style={{
+            padding: "12px",
+            background: "rgba(0, 0, 0, 0.05)",
+            borderRadius: "8px",
+            margin: "16px 0",
+            textAlign: "center",
+            fontSize: "14px",
+            color: "#333",
+          }}
+        >
           {landCount !== null ? (
             <span>
               <strong>분석 대상 토지: {landCount.toLocaleString()}개</strong>
             </span>
           ) : (
-            '토지 개수를 조회할 수 없습니다'
+            "토지 개수를 조회할 수 없습니다"
           )}
         </div>
       )}
-      
+
       {/* Error display */}
       {analysisError && (
         <ErrorContainer>
           <ErrorContent>
             <ErrorMessage>{analysisError}</ErrorMessage>
-            <ErrorCloseButton 
+            <ErrorCloseButton
               onClick={() => setAnalysisError(null)}
               title="오류 메시지 닫기"
             >
@@ -641,20 +686,24 @@ const AnalysisTab = () => {
           </ErrorContent>
         </ErrorContainer>
       )}
-      
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <SearchButton 
+
+      <div style={{ display: "flex", gap: "10px" }}>
+        <SearchButton
           onClick={() => setAnalysisStep(2)}
-          style={{ background: 'rgba(0, 0, 0, 0.2)' }}
+          style={{
+            background: "#FFFFFF",
+            color: "#5E9F00",
+            border: "1px solid #5E9F00"
+          }}
         >
           이전
         </SearchButton>
-        <StyledSearchButton 
+        <StyledSearchButton
           onClick={handleAnalysisExecution}
           disabled={!isStep3Valid() || isAnalyzing}
-          variant={isStep3Valid() ? 'success' : ''}
+          variant={isStep3Valid() ? "success" : ""}
         >
-          {isAnalyzing ? '분석 중...' : '분석 실행'}
+          {isAnalyzing ? "분석 중..." : "분석 실행"}
         </StyledSearchButton>
       </div>
     </>
