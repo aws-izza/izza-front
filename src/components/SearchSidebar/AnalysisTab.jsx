@@ -418,15 +418,15 @@ const AnalysisTab = () => {
       // analyze_data 구성
       const analyzeData = {
         "totalScore": Math.round((currentLandData.totalScore || 0) * 100),
-        "입지조건": 0,
-        "인프라": 0,
-        "안정성": 0
+        "입지조건": null,
+        "인프라": null,
+        "안정성": null
       };
 
       if (currentLandData.categoryScores) {
         currentLandData.categoryScores.forEach(category => {
           if (analyzeData.hasOwnProperty(category.categoryName)) {
-            analyzeData[category.categoryName] = Math.round((category.totalScore || 0) * 100);
+            analyzeData[category.categoryName] = category.totalScore !== null ? Math.round(category.totalScore * 100) : null;
           }
         });
       }
