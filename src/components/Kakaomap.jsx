@@ -372,7 +372,7 @@ const Kakaomap = () => {
           });
 
           // 마우스 오버 이벤트
-          overlayElement.addEventListener("mouseenter", () => {
+          container.addEventListener("mouseenter", () => {
             landService
               .getPolygon(item.id, item.type)
               .then((res) => {
@@ -382,7 +382,7 @@ const Kakaomap = () => {
               .catch((err) => console.error("폴리곤 로드 실패:", err));
           });
 
-          overlayElement.addEventListener("mouseleave", () => {
+          container.addEventListener("mouseleave", () => {
             hidePolygon();
           });
 
