@@ -66,6 +66,10 @@ export const useFavorites = () => {
     try {
       localStorage.removeItem(FAVORITES_KEY);
       setFavorites([]);
+      // 다른 컴포넌트들에게 변경사항을 알림
+      window.dispatchEvent(new CustomEvent(FAVORITES_CHANGED_EVENT, { 
+        detail: [] 
+      }));
     } catch (error) {
       console.error('즐겨찾기 전체 삭제 중 오류:', error);
     }

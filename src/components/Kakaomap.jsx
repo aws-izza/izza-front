@@ -235,7 +235,8 @@ const Kakaomap = () => {
         window.clusterer,
         "clusterclick",
         (cluster) => {
-          const newLevel = Math.max(1, map.getLevel() - 2); // 2단계 확대
+          const currentLevel = map.getLevel();
+          const newLevel = currentLevel <= 5 ? Math.max(1, currentLevel - 1) : Math.max(1, currentLevel - 2);
           map.setLevel(newLevel, { anchor: cluster.getCenter() });
         }
       );
@@ -351,7 +352,8 @@ const Kakaomap = () => {
           // 클릭 이벤트 → 지도 확대
           container.addEventListener("click", () => {
             console.log(`GROUP 클릭: ${item.name}`);
-            const newLevel = Math.max(1, map.getLevel() - 2); // 2단계 확대
+            const currentLevel = map.getLevel();
+            const newLevel = currentLevel <= 5 ? Math.max(1, currentLevel - 1) : Math.max(1, currentLevel - 2);
             map.setCenter(
               new kakao.maps.LatLng(item.point.lat, item.point.lng)
             );
@@ -370,7 +372,8 @@ const Kakaomap = () => {
           overlayElement.addEventListener("click", () => {
             setStateRef.current("idle");
             console.log(`GROUP 클릭: ${item.name}`);
-            const newLevel = Math.max(1, map.getLevel() - 2);
+            const currentLevel = map.getLevel();
+            const newLevel = currentLevel <= 5 ? Math.max(1, currentLevel - 1) : Math.max(1, currentLevel - 2);
             map.setCenter(position);
             map.setLevel(newLevel);
           });
