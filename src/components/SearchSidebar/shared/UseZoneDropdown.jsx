@@ -8,7 +8,8 @@ const UseZoneDropdown = ({
   isLoading = false,
   label = "용도지역",
   placeholder = "용도지역을 선택하세요",
-  showLabel
+  showLabel,
+  showDefaultOption = true
 }) => {
   return (
     <DropdownContainer>
@@ -18,7 +19,7 @@ const UseZoneDropdown = ({
         onChange={onChange}
         disabled={isLoading}
       >
-        <option value="">{placeholder}</option>
+        {showDefaultOption && <option value="">{placeholder}</option>}
         {useZoneCategories.map((category) => (
           <option key={category.name} value={category.name}>
             {category.displayName}

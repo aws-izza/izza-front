@@ -147,6 +147,7 @@ const ExploreTab = () => {
           isLoading={isLoading}
           label="용도지역"
           showLabel={true}
+          showDefaultOption={false}
         />
 
         <RangeSlider
